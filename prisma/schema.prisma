@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  TRUCK_PROVIDER
+  LOAD_PROVIDER
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentType {
+  PLATFORM_FEE
+  EARNING
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  role        UserRole
+  firstName   String
+  lastName    String
+  phoneNumber String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  trucks      Truck[]      @relation("TruckProvider")
+  loads       Load[]       @relation("LoadProvider")
+  orders      Order[]      @relation("TruckProviderOrders")
+  loadOrders  Order[]      @relation("LoadProviderOrders")
+  payments    Payment[]
+  paymentInfo PaymentInfo?
+}
+
+model Truck {
+  id             String   @id @default(uuid())
+  make           String
+  model          String
+  year           Int
+  capacity       Float
+  licensePlate   String   @unique
+  images         Json // JSON array of image URLs
+  specifications Json // Additional truck specifications
+  isAvailable    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  providerId String
+  provider   User    @relation("TruckProvider", fields: [providerId], references: [id])
+  orders     Order[]
+}
+
+model Load {
+  id               String   @id @default(uuid())
+  title            String
+  description      String
+  weight           Float
+  volume           Float
+  pickupLocation   String
+  deliveryLocation String
+  distance         Float
+  price            Float
+  type             String
+  images           Json     @default("[]") // JSON array of image URLs for load items
+  specifications   Json // Additional load specifications
+  isAvailable      Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  providerId String
+  provider   User    @relation("LoadProvider", fields: [providerId], references: [id])
+  orders     Order[]
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  status        OrderStatus   @default(PENDING)
+  platformFee   Float // 2% of load price
+  price         Float? // Price for the truck provider
+  paymentStatus PaymentStatus @default(PENDING)
+  notes         String?
+  completedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  acceptedAt    DateTime?
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  loadId          String
+  load            Load      @relation(fields: [loadId], references: [id])
+  truckId         String
+  truck           Truck     @relation(fields: [truckId], references: [id])
+  truckProviderId String
+  truckProvider   User      @relation("TruckProviderOrders", fields: [truckProviderId], references: [id])
+  loadProviderId  String
+  loadProvider    User      @relation("LoadProviderOrders", fields: [loadProviderId], references: [id])
+  payments        Payment[]
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  amount      Float
+  type        PaymentType
+  status      PaymentStatus @default(PENDING)
+  description String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+}
+
+model PaymentInfo {
+  id               String   @id @default(uuid())
+  bankName         String
+  accountNumber    String
+  routingNumber    String
+  accountType      String   @default("checking")
+  paymentFrequency String   @default("weekly")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
