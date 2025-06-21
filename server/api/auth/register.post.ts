@@ -1,5 +1,6 @@
 import { prisma } from '#imports'
 import { hashPassword } from '#imports'
+import { sendVerificationEmail } from '~/server/utils/email'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -15,10 +16,10 @@ export default defineEventHandler(async (event) => {
         // Validate required fields
         if (!email || !password || !firstName || !role) {
             console.log('Missing required fields:', { email, password, firstName, lastName, phoneNumber, role })
-            throw createError({
-                statusCode: 400,
+            return {
+                success: false,
                 message: 'Missing required fields'
-            })
+            }
         }
 
         // Check if user already exists
@@ -28,10 +29,10 @@ export default defineEventHandler(async (event) => {
 
         if (existingUser) {
             console.log('User already exists:', email)
-            throw createError({
-                statusCode: 400,
+            return {
+                success: false,
                 message: 'User with this email already exists'
-            })
+            }
         }
 
         // Hash password
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
         console.log('Password hashed successfully')
 
         // Map role string to enum (directly use uppercase)
-        let userRole
+        let userRole: any
         switch (role.toUpperCase()) {
             case 'TRUCK_PROVIDER':
                 userRole = 'TRUCK_PROVIDER'
@@ -76,17 +77,29 @@ export default defineEventHandler(async (event) => {
                 firstName,
                 lastName,
                 phoneNumber,
-                role: userRole,
-                isActive: true
+                role: userRole
             }
         })
 
         console.log('User created successfully:', user.id, 'with role:', user.role)
 
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString()
+        const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+        // Store OTP and expiry in the user record
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { otp, otpExpiresAt }
+        })
+        // Send verification email
+        await sendVerificationEmail(user.email, otp)
+        console.log('Verification OTP sent to:', user.email)
+
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user
 
         return {
+            success: true,
             user: userWithoutPassword,
             message: 'User registered successfully'
         }

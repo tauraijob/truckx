@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `user` ADD COLUMN `isVerified` BOOLEAN NOT NULL DEFAULT false,
+    MODIFY `isActive` BOOLEAN NOT NULL DEFAULT true;

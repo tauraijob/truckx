@@ -44,12 +44,17 @@ export const useAuth = () => {
         try {
             console.log('Making login API call with email:', email)
 
-            const response = await $fetch<LoginResponse>('/api/auth/login', {
+            const response = await $fetch<any>('/api/auth/login', {
                 method: 'POST',
                 body: { email, password }
             })
 
             console.log('Login API response:', JSON.stringify(response, null, 2))
+
+            if (response.success === false) {
+                error.value = response.message || 'Failed to login'
+                return false
+            }
 
             if (!response.token) {
                 console.error('No token received in login response')

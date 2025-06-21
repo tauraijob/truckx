@@ -58,7 +58,7 @@ export default defineNuxtConfig({
         { name: 'description', content: 'A modern trucking marketplace connecting truck providers with load providers' }
       ],
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', href: '/images/logo.png' },
         {
           rel: 'stylesheet',
           href: 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap'

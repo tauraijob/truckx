@@ -57,10 +57,6 @@
               <span v-else>Sign in</span>
             </button>
           </div>
-
-          <div v-if="error" class="mt-2 text-sm text-red-600 bg-red-50 p-3 rounded-md">
-            {{ error }}
-          </div>
         </form>
 
         <div class="mt-6">
@@ -88,12 +84,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 
 const router = useRouter()
 const { login } = useAuth()
+const toast = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -179,4 +177,18 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
+
+// Watch for error changes and show Vue Toastification toast
+watch(error, (val) => {
+  if (val) {
+    toast.error(val, {
+      timeout: 4000,
+      position: 'top-right',
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true
+    })
+    error.value = ''
+  }
+})
 </script>

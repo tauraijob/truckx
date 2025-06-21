@@ -50,6 +50,7 @@ export default defineEventHandler(async (event) => {
     const publicRoutes = [
         '/api/auth/login',
         '/api/auth/register',
+        '/api/auth/verify-otp',
         '/api/admin/create-direct'
     ]
 

@@ -111,34 +111,30 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
 
-        <div v-if="error" class="mt-4 p-4 bg-red-50 rounded-md">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                fill="currentColor">
-                <path fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clip-rule="evenodd" />
-              </svg>
-            </div>
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">
-                {{ error }}
-              </h3>
-            </div>
-          </div>
-        </div>
+    <div v-if="showOtpDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full relative">
+        <img src="/images/logo.png" alt="TruckX" class="h-10 mx-auto mb-4" />
+        <h3 class="text-xl font-bold text-navy-900 text-center mb-2">Verify Your Email</h3>
+        <p class="text-navy-700 text-center mb-4">Enter the 6-digit code sent to your email to verify your account.</p>
+        <input v-model="otpInput" maxlength="6" class="w-full px-4 py-2 border border-primary-200 rounded-md text-center text-lg tracking-widest mb-4 focus:ring-primary-500 focus:border-primary-500" placeholder="Enter OTP" />
+        <div v-if="otpError" class="text-red-600 text-sm text-center mb-2">{{ otpError }}</div>
+        <button @click="verifyOtp" :disabled="otpLoading || otpInput.length !== 6" class="w-full py-2 px-4 bg-primary-600 text-white rounded-md font-medium hover:bg-primary-700 transition disabled:opacity-50">Verify</button>
+        <button @click="closeOtpDialog" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700">&times;</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 
 const router = useRouter()
+const toast = useToast()
 
 const name = ref('')
 const lastName = ref('')
@@ -150,6 +146,12 @@ const role = ref('')
 const terms = ref(false)
 const loading = ref(false)
 const error = ref('')
+
+// OTP dialog state
+const showOtpDialog = ref(false)
+const otpInput = ref('')
+const otpError = ref('')
+const otpLoading = ref(false)
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -188,13 +190,67 @@ const handleRegister = async () => {
       }
     })
     console.log('Registration successful:', response)
-    alert('Account created successfully! Please log in.')
-    router.push('/auth/login')
+    // Show OTP dialog instead of redirecting
+    showOtpDialog.value = true
   } catch (err: any) {
     console.error('Registration failed:', err)
     error.value = err.data?.message || 'An error occurred during registration. Please try again.'
   } finally {
     loading.value = false
+  }
+}
+
+function closeOtpDialog() {
+  showOtpDialog.value = false
+  otpInput.value = ''
+  otpError.value = ''
+}
+
+// Watch for error changes and show Vue Toastification toast
+watch(error, (val) => {
+  if (val) {
+    toast.error(val, {
+      timeout: 4000,
+      position: 'top-right',
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true
+    })
+    error.value = ''
+  }
+})
+
+async function verifyOtp() {
+  otpLoading.value = true
+  otpError.value = ''
+  try {
+    await $fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      body: {
+        email: email.value,
+        otp: otpInput.value
+      }
+    })
+    toast.success('Email verified! You can now log in.', {
+      timeout: 4000,
+      position: 'top-right',
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true
+    })
+    closeOtpDialog()
+    router.push('/auth/login')
+  } catch (err: any) {
+    otpError.value = err.data?.message || 'Invalid OTP. Please try again.'
+    toast.error(otpError.value, {
+      timeout: 4000,
+      position: 'top-right',
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true
+    })
+  } finally {
+    otpLoading.value = false
   }
 }
 </script>
