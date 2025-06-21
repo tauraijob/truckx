@@ -20,101 +20,99 @@ export default defineEventHandler(async (event) => {
             },
             take: limitNum,
             orderBy: {
-                createdAt: 'desc' // Show newest trucks first
+                createdAt: 'desc'
+            },
+            select: {
+                id: true,
+                make: true,
+                model: true,
+                year: true,
+                licensePlate: true,
+                capacity: true,
+                images: true,
+                specifications: true,
+                isAvailable: true,
+                provider: {
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
+                }
             }
         })
 
         console.log(`✅ PUBLIC TRUCKS API: Found ${trucks.length} available trucks`)
 
         // Format the trucks for public display
-        // Remove sensitive information like provider details
-        const publicTrucks = trucks.map(truck => ({
-            id: truck.id,
-            name: truck.name || `${truck.make} ${truck.model}` || 'Unnamed Truck',
-            type: truck.type || 'Standard',
-            capacity: truck.capacity || 10,
-            capacityUnit: 'tons',
-            location: truck.currentLocation || 'Unknown Location',
-            imageUrl: truck.images && truck.images[0] ? truck.images[0] : '/images/truckx-slide.webp'
-        }))
-
-        // If no trucks found, provide demo data for the frontend
-        if (publicTrucks.length === 0) {
-            console.log('⚠️ PUBLIC TRUCKS API: No available trucks found, returning demo data')
-            return {
-                trucks: [
-                    {
-                        id: 'demo1',
-                        name: 'Flatbed Truck',
-                        type: 'Flatbed',
-                        capacity: 20,
-                        capacityUnit: 'tons',
-                        location: 'New York, NY',
-                        imageUrl: '/images/truckx-slide2.jpg'
-                    },
-                    {
-                        id: 'demo2',
-                        name: 'Box Truck',
-                        type: 'Box',
-                        capacity: 10,
-                        capacityUnit: 'tons',
-                        location: 'Los Angeles, CA',
-                        imageUrl: '/images/truckx-slide.webp'
-                    },
-                    {
-                        id: 'demo3',
-                        name: 'Refrigerated Truck',
-                        type: 'Refrigerated',
-                        capacity: 15,
-                        capacityUnit: 'tons',
-                        location: 'Chicago, IL',
-                        imageUrl: '/images/truckx-slide3.jpg'
-                    }
-                ]
+        const publicTrucks = trucks.map(truck => {
+            // Parse specifications if they exist
+            let specifications = {}
+            try {
+                specifications = typeof truck.specifications === 'string'
+                    ? JSON.parse(truck.specifications)
+                    : truck.specifications || {}
+            } catch (e) {
+                console.error('Error parsing specifications:', e)
+                specifications = {
+                    engineType: 'Diesel',
+                    transmission: 'Automatic',
+                    axles: '6x4',
+                    wheelbase: '244 inches',
+                    type: 'STANDARD',
+                    currentLocation: 'Unknown Location',
+                    description: 'A reliable and efficient truck for cargo transportation.'
+                }
             }
+
+            // Parse images if they exist
+            let images = []
+            try {
+                images = typeof truck.images === 'string'
+                    ? JSON.parse(truck.images)
+                    : truck.images || []
+            } catch (e) {
+                console.error('Error parsing images:', e)
+                images = ['/images/truckx-slide.webp']
+            }
+
+            // Get location and description from specifications
+            const location = specifications.currentLocation || 'Unknown Location'
+            const type = specifications.type || 'STANDARD'
+            const description = specifications.description || 'A reliable and efficient truck for cargo transportation.'
+
+            return {
+                id: truck.id,
+                name: `${truck.make} ${truck.model}`,
+                make: truck.make,
+                model: truck.model,
+                year: truck.year,
+                type: type,
+                capacity: truck.capacity || 20,
+                capacityUnit: 'tons',
+                currentLocation: location,
+                imageUrl: images.length > 0 ? images[0] : '/images/truckx-slide.webp',
+                images: images,
+                specifications: {
+                    engineType: specifications.engineType || 'Diesel',
+                    transmission: specifications.transmission || 'Automatic',
+                    axles: specifications.axles || '6x4',
+                    wheelbase: specifications.wheelbase || '244 inches'
+                },
+                description: description,
+                providerName: truck.provider ? `${truck.provider.firstName} ${truck.provider.lastName}` : 'Unknown Provider'
+            }
+        })
+
+        // If no trucks found, return empty array
+        if (publicTrucks.length === 0) {
+            console.log('⚠️ PUBLIC TRUCKS API: No available trucks found')
+            return { trucks: [] }
         }
 
-        return {
-            trucks: publicTrucks
-        }
+        console.log('Returning trucks:', JSON.stringify(publicTrucks, null, 2))
+        return { trucks: publicTrucks }
     } catch (error: any) {
         console.error('❌ PUBLIC TRUCKS API: Error fetching trucks:', error)
-
-        // Return demo data in case of error to ensure the UI can still function
-        console.log('⚠️ PUBLIC TRUCKS API: Error occurred, returning demo data')
-        return {
-            trucks: [
-                {
-                    id: 'demo1',
-                    name: 'Flatbed Truck',
-                    type: 'Flatbed',
-                    capacity: 20,
-                    capacityUnit: 'tons',
-                    location: 'New York, NY',
-                    imageUrl: '/images/truckx-slide2.jpg'
-                },
-                {
-                    id: 'demo2',
-                    name: 'Box Truck',
-                    type: 'Box',
-                    capacity: 10,
-                    capacityUnit: 'tons',
-                    location: 'Los Angeles, CA',
-                    imageUrl: '/images/truckx-slide.webp'
-                },
-                {
-                    id: 'demo3',
-                    name: 'Refrigerated Truck',
-                    type: 'Refrigerated',
-                    capacity: 15,
-                    capacityUnit: 'tons',
-                    location: 'Chicago, IL',
-                    imageUrl: '/images/truckx-slide3.jpg'
-                }
-            ]
-        }
-
-        // Don't throw errors for the public API to ensure the UI always gets data
-        // We log the error for debugging purposes only
+        return { trucks: [] }
     }
 }) 

@@ -1,14 +1,13 @@
 <template>
   <div>
     <div v-if="truck" class="truck-detail">
-      <div class="relative h-60 mb-4 rounded-lg overflow-hidden">
-        <img :src="truck.imageUrl" :alt="truck.name" class="w-full h-full object-cover" />
-        <div class="absolute top-4 right-4 bg-[#0070f3] text-white text-xs font-bold px-2 py-1 rounded-full">
-          Available Now
-        </div>
-      </div>
+      <!-- Truck Image Gallery -->
+      <TruckImageGallery 
+        :images="truck.images || []" 
+        :alt="`${truck.make} ${truck.model}`"
+      />
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 mt-6">
         <div>
           <h4 class="text-sm text-gray-500 font-medium">Make & Model</h4>
           <p class="text-gray-700">{{ truck.make || '-' }} {{ truck.model || '-' }}</p>
@@ -19,37 +18,40 @@
         </div>
         <div>
           <h4 class="text-sm text-gray-500 font-medium">Capacity</h4>
-          <p class="text-gray-700">{{ truck.capacity || '-' }} {{ truck.capacityUnit || '-' }}</p>
+          <p class="text-gray-700">{{ truck.capacity || '-' }} {{ truck.capacityUnit || 'tons' }}</p>
         </div>
         <div>
-          <h4 class="text-sm text-gray-500 font-medium">License Plate</h4>
-          <p class="text-gray-700">{{ truck.licensePlate || 'XXXXX' }}</p>
+          <h4 class="text-sm text-gray-500 font-medium">Type</h4>
+          <p class="text-gray-700">{{ formatTruckType(truck.type) || 'Standard' }}</p>
         </div>
       </div>
 
       <div class="mt-4">
         <h4 class="text-sm text-gray-500 font-medium">Current Location</h4>
-        <div class="flex items-center mt-1 text-gray-700">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[#0070f3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          <span>{{ truck.location || 'Not specified' }}</span>
-        </div>
+        <p class="text-gray-700">{{ truck.currentLocation || 'Location not specified' }}</p>
       </div>
 
       <div class="mt-4" v-if="truck.specifications">
         <h4 class="text-sm text-gray-500 font-medium">Specifications</h4>
         <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-          <div v-for="(value, key) in truckSpecifications" :key="key" class="text-gray-700">
-            <span class="font-medium">{{ formatKey(key) }}:</span> {{ value }}
+          <div v-if="truck.specifications.engineType" class="text-gray-700">
+            <span class="font-medium">Engine Type:</span> {{ truck.specifications.engineType }}
+          </div>
+          <div v-if="truck.specifications.transmission" class="text-gray-700">
+            <span class="font-medium">Transmission:</span> {{ truck.specifications.transmission }}
+          </div>
+          <div v-if="truck.specifications.axles" class="text-gray-700">
+            <span class="font-medium">Axles:</span> {{ truck.specifications.axles }}
+          </div>
+          <div v-if="truck.specifications.wheelbase" class="text-gray-700">
+            <span class="font-medium">Wheelbase:</span> {{ truck.specifications.wheelbase }}
           </div>
         </div>
       </div>
 
       <div class="mt-4" v-if="truck.description">
         <h4 class="text-sm text-gray-500 font-medium">Description</h4>
-        <p class="mt-1 text-gray-700">{{ truck.description || 'No description available' }}</p>
+        <p class="mt-1 text-gray-700">{{ truck.description }}</p>
       </div>
       
       <div class="mt-4">
@@ -75,6 +77,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import TruckImageGallery from './TruckImageGallery.vue'
 
 const props = defineProps({
   truck: {
@@ -83,22 +86,23 @@ const props = defineProps({
   }
 });
 
-const truckSpecifications = computed(() => {
-  if (!props.truck || !props.truck.specifications) return {};
+// Format truck type for display
+function formatTruckType(type: string): string {
+  if (!type) return 'Standard';
   
-  // Filter out internal properties like _images
-  const specs = { ...props.truck.specifications };
-  Object.keys(specs).forEach(key => {
-    if (key.startsWith('_')) delete specs[key];
-  });
-  
-  return specs;
-});
-
-function formatKey(key: string): string {
-  // Convert camelCase to Title Case with spaces
-  return key
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase());
+  switch (type.toUpperCase()) {
+    case 'FLATBED':
+      return 'Flatbed';
+    case 'REFRIGERATED':
+      return 'Refrigerated';
+    case 'DRY_VAN':
+      return 'Dry Van';
+    case 'STEP_DECK':
+      return 'Step Deck';
+    case 'TANKER':
+      return 'Tanker';
+    default:
+      return type;
+  }
 }
 </script> 

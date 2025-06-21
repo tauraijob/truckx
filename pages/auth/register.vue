@@ -151,12 +151,16 @@ const terms = ref(false)
 const loading = ref(false)
 const error = ref('')
 
-// Form validation
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 const isFormValid = computed(() => {
   return (
-    name.value.length > 0 &&
-    email.value.length > 0 &&
-    phoneNumber.value.length > 0 &&
+    name.value.trim().length > 0 &&
+    lastName.value.trim().length > 0 &&
+    isValidEmail(email.value) &&
+    phoneNumber.value.trim().length > 0 &&
     password.value.length >= 6 &&
     password.value === confirmPassword.value &&
     role.value !== '' &&
@@ -166,15 +170,12 @@ const isFormValid = computed(() => {
 
 const handleRegister = async () => {
   if (!isFormValid.value) {
-    error.value = 'Please fill in all required fields correctly'
+    error.value = 'Please fill in all required fields correctly.'
     return
   }
-
   loading.value = true
   error.value = ''
-
   try {
-    // Make actual API call
     const response = await $fetch('/api/auth/register', {
       method: 'POST',
       body: {
@@ -186,13 +187,8 @@ const handleRegister = async () => {
         role: role.value
       }
     })
-
     console.log('Registration successful:', response)
-    
-    // Show success message
     alert('Account created successfully! Please log in.')
-    
-    // Redirect to login page
     router.push('/auth/login')
   } catch (err: any) {
     console.error('Registration failed:', err)

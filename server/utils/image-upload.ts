@@ -25,7 +25,7 @@ interface UploadedImage {
 
 /**
  * Process multiple images (either base64 or URLs) and return their paths
- * This is a simplified version that handles both URL images and base64 images
+ * This function handles both URL images and base64 images, saving base64 images to the filesystem
  */
 export async function processImages(images: string[]): Promise<string[]> {
     if (!images || !Array.isArray(images) || images.length === 0) {
@@ -46,9 +46,13 @@ export async function processImages(images: string[]): Promise<string[]> {
                 continue
             }
 
-            // For simplicity, we'll convert all base64 images to a placeholder
-            // In a real implementation, this would save the base64 to a file
-            imagePaths.push('/images/load-default.webp')
+            // If it's a base64 image, save it to the filesystem
+            if (image.startsWith('data:image')) {
+                const savedPath = await saveBase64Image(image)
+                if (savedPath) {
+                    imagePaths.push(savedPath)
+                }
+            }
         } catch (error) {
             console.error('Error processing image:', error)
             // Continue with other images even if one fails
@@ -57,7 +61,7 @@ export async function processImages(images: string[]): Promise<string[]> {
 
     // If we couldn't process any images, use a default
     if (imagePaths.length === 0) {
-        imagePaths.push('/images/load-default.webp')
+        imagePaths.push('/images/truckx-slide.webp')
     }
 
     return imagePaths

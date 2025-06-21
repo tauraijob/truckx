@@ -1,4 +1,5 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import type { Order, OrderStatus } from '~/types'
 
 interface Load {
     id: string
@@ -25,24 +26,14 @@ interface UserInfo {
     email: string
 }
 
-interface Order {
-    id: string
-    loadId: string
-    truckId: string
-    loadProviderId: string
-    truckProviderId: string
-    status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'IN_TRANSIT' | 'COMPLETED' | 'CANCELLED'
-    price: number
-    notes?: string
-    acceptedAt?: string
-    startedAt?: string
-    completedAt?: string
-    createdAt: string
-    updatedAt: string
-    load: Load
-    truck: Truck
-    loadProvider: UserInfo
-    truckProvider: UserInfo
+interface OrderResponse {
+    orders: Order[]
+    pagination?: {
+        currentPage: number
+        totalPages: number
+        totalItems: number
+        itemsPerPage: number
+    }
 }
 
 export const useOrder = () => {
@@ -50,31 +41,36 @@ export const useOrder = () => {
     const loading = ref(false)
     const error = ref<string | null>(null)
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (page = 1, status?: OrderStatus) => {
         try {
             loading.value = true
             error.value = null
 
-            const response = await fetch('/api/orders')
+            const queryParams = new URLSearchParams()
+            if (page > 1) queryParams.append('page', page.toString())
+            if (status) queryParams.append('status', status)
+
+            const response = await fetch(`/api/orders?${queryParams.toString()}`)
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}))
                 throw new Error(errorData.message || 'Failed to fetch orders')
             }
 
-            const data = await response.json()
-            orders.value = data.orders || []
+            const data = await response.json() as OrderResponse
+            orders.value = data.orders
 
             return data
         } catch (err: any) {
-            error.value = err.message || 'Failed to load orders'
+            error.value = err.message || 'Failed to fetch orders'
             console.error('Error fetching orders:', err)
-            orders.value = [] // Ensure we clear any mock data
+            throw err
         } finally {
             loading.value = false
         }
     }
 
-    const createOrder = async (orderData: { loadId: string, truckId: string, price: number, notes?: string }) => {
+    const createOrder = async (loadId: string, truckId: string, price: number, notes?: string) => {
         try {
             loading.value = true
             error.value = null
@@ -84,7 +80,7 @@ export const useOrder = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(orderData),
+                body: JSON.stringify({ loadId, truckId, price, notes }),
             })
 
             if (!response.ok) {
@@ -93,8 +89,7 @@ export const useOrder = () => {
             }
 
             const data = await response.json()
-            // Refresh orders list after creating a new one
-            await fetchOrders()
+            orders.value.unshift(data.order)
 
             return data.order
         } catch (err: any) {
@@ -106,7 +101,7 @@ export const useOrder = () => {
         }
     }
 
-    const updateOrderStatus = async (orderId: string, status: Order['status'], notes?: string) => {
+    const updateOrderStatus = async (orderId: string, status: OrderStatus, notes?: string) => {
         try {
             loading.value = true
             error.value = null

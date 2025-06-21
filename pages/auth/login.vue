@@ -44,7 +44,7 @@
             </div>
 
             <div class="text-sm">
-              <a href="#" class="font-medium text-primary-600 hover:text-primary-500">
+              <a href="/auth/forgot-password" class="font-medium text-primary-600 hover:text-primary-500">
                 Forgot your password?
               </a>
             </div>
@@ -88,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useRouter } from 'vue-router'
 
@@ -101,24 +101,46 @@ const rememberMe = ref(false)
 const loading = ref(false)
 const error = ref('')
 
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 const handleLogin = async () => {
+  if (!email.value) {
+    error.value = 'Email is required.'
+    return
+  }
+  if (!isValidEmail(email.value)) {
+    error.value = 'Please enter a valid email address.'
+    return
+  }
+  if (!password.value) {
+    error.value = 'Password is required.'
+    return
+  }
   try {
     loading.value = true
     error.value = ''
     console.log('Attempting login with:', { email: email.value })
 
-    const success = await login(email.value, password.value)
+    // Get auth instance
+    const auth = useAuth()
+    
+    // Attempt login
+    const success = await auth.login(email.value, password.value)
     console.log('Login result:', success)
     
     if (!success) {
-      console.log('Login failed, error:', error.value)
+      console.log('Login failed, error:', auth.error.value)
+      error.value = auth.error.value || 'Login failed'
       return
     }
 
-    // Get the auth state directly - this ensures we're using the latest state
-    const authState = useAuth()
-    const user = authState.user.value
+    // Wait for next tick to ensure state is updated
+    await nextTick()
     
+    // Get user after state update
+    const user = auth.user.value
     console.log('User after login:', JSON.stringify(user, null, 2))
     
     if (!user) {
@@ -127,9 +149,10 @@ const handleLogin = async () => {
       return
     }
 
-    // Handle role-based redirection
     console.log('User role is:', user.role)
-    let redirectPath = '/'
+    
+    // Determine redirect path
+    let redirectPath = '/dashboard/admin' // Default to admin dashboard
     
     switch(user.role) {
       case 'TRUCK_PROVIDER':
@@ -142,19 +165,13 @@ const handleLogin = async () => {
       case 'SUPER_ADMIN':
         redirectPath = '/dashboard/admin'
         break
-      default:
-        // If no matching role, try to guess based on email
-        if (user.email?.includes('truck')) {
-          redirectPath = '/dashboard/truck-provider'
-        } else if (user.email?.includes('load')) {
-          redirectPath = '/dashboard/load-provider'
-        } else if (user.email?.includes('admin')) {
-          redirectPath = '/dashboard/admin'
-        }
     }
     
     console.log('Redirecting to:', redirectPath)
-    router.push(redirectPath)
+    
+    // Use navigateTo instead of router.push for better middleware handling
+    await navigateTo(redirectPath)
+    
   } catch (err: any) {
     console.error('Login error:', err)
     error.value = err.message || 'An error occurred during login'

@@ -1,16 +1,5 @@
 import { ref, computed } from 'vue'
-
-interface User {
-    id: string
-    email: string
-    firstName: string
-    lastName: string
-    role: 'TRUCK_PROVIDER' | 'LOAD_PROVIDER' | 'SUPER_ADMIN' | 'ADMIN'
-    phoneNumber: string
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
-}
+import type { User, UserRole } from '~/types'
 
 interface LoginResponse {
     user: User
@@ -22,6 +11,28 @@ interface LoginResponse {
 const user = ref<User | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+// Helper function to safely access localStorage
+const getStoredToken = (): string | null => {
+    if (process.client) {
+        return localStorage.getItem('token')
+    }
+    return null
+}
+
+// Helper function to safely set token in localStorage
+const setStoredToken = (token: string): void => {
+    if (process.client) {
+        localStorage.setItem('token', token)
+    }
+}
+
+// Helper function to safely remove token from localStorage
+const removeStoredToken = (): void => {
+    if (process.client) {
+        localStorage.removeItem('token')
+    }
+}
 
 export const useAuth = () => {
     const isAuthenticated = computed(() => !!user.value)
@@ -38,7 +49,7 @@ export const useAuth = () => {
                 body: { email, password }
             })
 
-            console.log('Login API full response:', JSON.stringify(response, null, 2))
+            console.log('Login API response:', JSON.stringify(response, null, 2))
 
             if (!response.token) {
                 console.error('No token received in login response')
@@ -47,7 +58,7 @@ export const useAuth = () => {
             }
 
             // Store the token
-            localStorage.setItem('token', response.token)
+            setStoredToken(response.token)
             console.log('Token stored in localStorage')
 
             if (!response.user) {
@@ -57,9 +68,10 @@ export const useAuth = () => {
             }
 
             // Set the user
-            user.value = { ...response.user }
+            user.value = response.user
             console.log('User state set to:', JSON.stringify(user.value, null, 2))
 
+            // Return true since we have both token and user
             return true
         } catch (err: any) {
             console.error('Login API error:', err)
@@ -83,12 +95,18 @@ export const useAuth = () => {
 
     const logout = () => {
         user.value = null
-        localStorage.removeItem('token')
+        removeStoredToken()
         console.log('User logged out, auth state cleared')
     }
 
     const checkAuth = async () => {
-        const token = localStorage.getItem('token')
+        // Only check token on client-side
+        if (!process.client) {
+            console.log('checkAuth - running on server, skipping token check')
+            return false
+        }
+
+        const token = getStoredToken()
         console.log('checkAuth - token exists:', !!token)
 
         if (!token) {
@@ -115,28 +133,34 @@ export const useAuth = () => {
             } else {
                 console.log('checkAuth - no user data in response')
                 user.value = null
-                localStorage.removeItem('token')
+                removeStoredToken()
                 return false
             }
         } catch (error) {
             console.error('checkAuth - error:', error)
             user.value = null
-            localStorage.removeItem('token')
+            removeStoredToken()
             return false
         }
     }
 
     const getToken = () => {
-        const token = localStorage.getItem('token')
-        console.log('getToken called, token exists:', !!token)
-        return token
+        return getStoredToken()
     }
+
+    // Helper computed properties for role checks
+    const isAdmin = computed(() => user.value?.role === UserRole.ADMIN || user.value?.role === UserRole.SUPER_ADMIN)
+    const isTruckProvider = computed(() => user.value?.role === UserRole.TRUCK_PROVIDER)
+    const isLoadProvider = computed(() => user.value?.role === UserRole.LOAD_PROVIDER)
 
     return {
         user,
         loading,
         error,
         isAuthenticated,
+        isAdmin,
+        isTruckProvider,
+        isLoadProvider,
         login,
         logout,
         checkAuth,

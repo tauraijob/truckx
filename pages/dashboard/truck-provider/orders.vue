@@ -363,6 +363,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import type { Order, OrderStatus } from '~/types'
 import { 
   MagnifyingGlassIcon,
   ClipboardDocumentCheckIcon,
@@ -380,40 +381,33 @@ definePageMeta({
   middleware: ['auth']
 })
 
-// Order interface
-interface Order {
-  id: string;
-  loadId: string;
-  loadName: string;
-  loadProviderName: string;
-  loadProviderId: string;
-  truckId: string;
-  truckName: string;
-  origin: string;
-  destination: string;
-  pickupDate: string;
-  deliveryDate: string;
-  price: number;
-  status: string;
-  createdAt: string;
+interface OrderWithDetails extends Order {
+  loadName: string
+  loadProviderName: string
+  loadProviderId: string
+  truckName: string
+  origin: string
+  destination: string
+  pickupDate: string
+  deliveryDate: string
 }
 
 // Pagination and filters
 const currentPage = ref(1)
 const itemsPerPage = 10
 const searchQuery = ref('')
-const filterStatus = ref('')
+const filterStatus = ref<OrderStatus | ''>('')
 const sortBy = ref('date-desc')
 
 // Orders data
-const orders = ref<Order[]>([])
+const orders = ref<OrderWithDetails[]>([])
 const loading = ref(true)
 
 // Modals and selected order
 const showOrderDetailsModal = ref(false)
 const showUpdateStatusModal = ref(false)
 const showRejectModal = ref(false)
-const selectedOrder = ref<Order | null>(null)
+const selectedOrder = ref<OrderWithDetails | null>(null)
 const newStatus = ref('')
 const statusNotes = ref('')
 const rejectionReason = ref('')
@@ -523,17 +517,19 @@ function formatDate(dateString: string): string {
 }
 
 // Format status
-function formatStatus(status: string): string {
+function formatStatus(status: OrderStatus): string {
   switch (status) {
-    case 'PENDING':
+    case OrderStatus.PENDING:
       return 'Pending'
-    case 'ACCEPTED':
+    case OrderStatus.ACCEPTED:
       return 'Accepted'
-    case 'IN_TRANSIT':
+    case OrderStatus.IN_TRANSIT:
       return 'In Transit'
-    case 'DELIVERED':
+    case OrderStatus.DELIVERED:
       return 'Delivered'
-    case 'CANCELLED':
+    case OrderStatus.COMPLETED:
+      return 'Completed'
+    case OrderStatus.CANCELLED:
       return 'Cancelled'
     default:
       return status
@@ -541,17 +537,18 @@ function formatStatus(status: string): string {
 }
 
 // Get status badge class
-function getStatusClass(status: string): string {
+function getStatusClass(status: OrderStatus): string {
   switch (status) {
-    case 'PENDING':
+    case OrderStatus.PENDING:
       return 'bg-yellow-100 text-yellow-800'
-    case 'ACCEPTED':
+    case OrderStatus.ACCEPTED:
       return 'bg-blue-100 text-blue-800'
-    case 'IN_TRANSIT':
+    case OrderStatus.IN_TRANSIT:
       return 'bg-purple-100 text-purple-800'
-    case 'DELIVERED':
+    case OrderStatus.DELIVERED:
+    case OrderStatus.COMPLETED:
       return 'bg-green-100 text-green-800'
-    case 'CANCELLED':
+    case OrderStatus.CANCELLED:
       return 'bg-red-100 text-red-800'
     default:
       return 'bg-gray-100 text-gray-800'
@@ -564,19 +561,19 @@ function calculateEarnings(price: number): number {
 }
 
 // Modal functions
-function openOrderDetails(order: Order) {
+function openOrderDetails(order: OrderWithDetails) {
   selectedOrder.value = order
   showOrderDetailsModal.value = true
 }
 
-function openUpdateStatusModal(order: Order, status: string) {
+function openUpdateStatusModal(order: OrderWithDetails, status: OrderStatus) {
   selectedOrder.value = order
   newStatus.value = status
   statusNotes.value = ''
   showUpdateStatusModal.value = true
 }
 
-function openRejectModal(order: Order) {
+function openRejectModal(order: OrderWithDetails) {
   selectedOrder.value = order
   rejectionReason.value = ''
   showRejectModal.value = true

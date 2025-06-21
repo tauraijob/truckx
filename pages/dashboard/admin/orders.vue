@@ -78,7 +78,7 @@
               </div>
             </td>
             <td class="px-6 py-4">
-              <div class="text-sm text-gray-900">{{ order.truckInfo }}</div>
+              <div class="text-sm text-gray-900">{{ order.truckName }}</div>
             </td>
             <td class="px-6 py-4">
               <div class="text-sm text-gray-900">
@@ -204,7 +204,7 @@
                     <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
                       <h4 class="mb-2 font-medium text-gray-700">Truck Information</h4>
                       <div class="mb-1 text-sm">
-                        <span class="font-medium">Details:</span> {{ selectedOrder?.truckInfo }}
+                        <span class="font-medium">Details:</span> {{ selectedOrder?.truckName }}
                       </div>
                     </div>
 
@@ -248,27 +248,21 @@ import {
   EyeIcon,
   ArrowPathIcon
 } from '@heroicons/vue/24/outline'
+import type { Order, OrderStatus } from '~/types'
 
 definePageMeta({
   layout: 'admin-dashboard',
   middleware: ['auth']
 })
 
-interface Order {
-  id: string;
-  createdAt: string;
-  loadName: string;
-  pickupLocation: string;
-  deliveryLocation: string;
-  truckInfo: string;
-  driverName: string;
-  loadProviderName: string;
-  loadProviderEmail?: string;
-  truckProviderName?: string;
-  truckProviderEmail?: string;
-  status: string;
-  amount: number;
-  paymentStatus: string;
+interface OrderWithDetails extends Order {
+  loadName: string
+  truckName: string
+  driverName: string
+  loadProviderName: string
+  loadProviderEmail?: string
+  truckProviderName?: string
+  truckProviderEmail?: string
 }
 
 // Pagination settings
@@ -277,10 +271,10 @@ const currentPage = ref(1)
 const totalPages = ref(1)
 const totalItems = ref(0)
 const searchQuery = ref('')
-const filterStatus = ref('')
+const filterStatus = ref<OrderStatus | ''>('')
 
 // Orders data
-const orders = ref<Order[]>([])
+const orders = ref<OrderWithDetails[]>([])
 const loading = ref(true)
 
 // Display range for pagination
@@ -304,15 +298,19 @@ function prevPage() {
 }
 
 // Format order status
-function formatOrderStatus(status: string): string {
+function formatOrderStatus(status: OrderStatus): string {
   switch (status) {
-    case 'PENDING':
+    case OrderStatus.PENDING:
       return 'Pending'
-    case 'IN_PROGRESS':
-      return 'In Progress'
-    case 'COMPLETED':
+    case OrderStatus.ACCEPTED:
+      return 'Accepted'
+    case OrderStatus.IN_TRANSIT:
+      return 'In Transit'
+    case OrderStatus.DELIVERED:
+      return 'Delivered'
+    case OrderStatus.COMPLETED:
       return 'Completed'
-    case 'CANCELLED':
+    case OrderStatus.CANCELLED:
       return 'Cancelled'
     default:
       return status
@@ -320,19 +318,18 @@ function formatOrderStatus(status: string): string {
 }
 
 // Get status badge styling
-function getStatusBadgeClass(status: string): string {
+function getStatusBadgeClass(status: OrderStatus): string {
   switch (status) {
-    case 'PENDING':
+    case OrderStatus.PENDING:
       return 'bg-yellow-100 text-yellow-800'
-    case 'ACCEPTED':
+    case OrderStatus.ACCEPTED:
       return 'bg-blue-100 text-blue-800'
-    case 'IN_TRANSIT':
+    case OrderStatus.IN_TRANSIT:
       return 'bg-purple-100 text-purple-800'
-    case 'COMPLETED':
+    case OrderStatus.DELIVERED:
+    case OrderStatus.COMPLETED:
       return 'bg-green-100 text-green-800'
-    case 'CANCELLED':
-      return 'bg-red-100 text-red-800'
-    case 'REJECTED':
+    case OrderStatus.CANCELLED:
       return 'bg-red-100 text-red-800'
     default:
       return 'bg-gray-100 text-gray-800'
@@ -411,7 +408,7 @@ async function fetchOrders() {
           loadName: order.load?.title || order.load?.name || 'Unknown Load',
           pickupLocation: order.load?.pickupLocation || 'Unknown',
           deliveryLocation: order.load?.deliveryLocation || 'Unknown',
-          truckInfo: order.truck ? 
+          truckName: order.truck ? 
             `${order.truck.make || ''} ${order.truck.model || ''} (${order.truck.licensePlate || 'Unknown'})` : 
             'Unknown Truck',
           driverName: order.truckProvider ? 
@@ -487,10 +484,10 @@ onMounted(() => {
 
 // States for modal
 const showDetailsModal = ref(false)
-const selectedOrder = ref<Order | null>(null)
+const selectedOrder = ref<OrderWithDetails | null>(null)
 
 // Open order details modal
-function openOrderDetails(order: Order) {
+function openOrderDetails(order: OrderWithDetails) {
   selectedOrder.value = order
   showDetailsModal.value = true
 }

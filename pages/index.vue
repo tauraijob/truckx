@@ -1,133 +1,41 @@
 <template>
   <div>
-    <!-- Hero Section with Slideshow -->
-    <div class="relative bg-gradient-to-br from-[#004080] to-[#001a33] overflow-hidden">
-      <!-- Slideshow Background -->
+    <!-- Hero Section with Sliding Images -->
+    <div class="relative bg-gradient-to-br from-[#004080] to-[#001a33] overflow-hidden h-[500px]">
+      <!-- Sliding Images Background -->
       <div class="absolute inset-0 z-0">
         <div class="relative h-full">
-          <div v-for="(slide, index) in slides" :key="index"
+          <div v-for="(image, index) in slides" :key="index"
             class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
             :class="{ 'opacity-100': currentSlide === index, 'opacity-0': currentSlide !== index }">
-            <img :src="slide.image" :alt="slide.alt" class="w-full h-full object-cover" />
+            <img :src="image.image" :alt="image.alt" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-r from-[#004080]/85 to-[#001a33]/70"></div>
           </div>
         </div>
       </div>
 
-      <!-- Slideshow Controls -->
-      <div class="absolute bottom-6 left-0 right-0 z-10 flex justify-center space-x-3">
-        <button v-for="(slide, index) in slides" :key="index" @click="currentSlide = index"
-          class="w-3 h-3 rounded-full transition-colors duration-300"
-          :class="currentSlide === index ? 'bg-white' : 'bg-white/40'" 
-          aria-label="Go to slide"></button>
-      </div>
-
-      <div class="max-w-7xl mx-auto relative z-10">
-        <div class="relative z-10 py-16 sm:py-24 lg:py-32 px-4 sm:px-6 lg:px-8">
-          <div class="text-center sm:text-center lg:text-left max-w-lg lg:max-w-xl">
-            <h1 class="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
-              <span class="block">Streamlined</span>
-              <span class="block text-[#4dabf7]">Logistics Solutions</span>
+      <!-- Hero Content -->
+      <div class="relative z-10 h-full flex items-center">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div class="text-center pt-20">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8">
+              Connect Your Cargo<br />
+              with Reliable<br />
+              Transport
             </h1>
-            <p class="mt-4 text-xl text-gray-200 max-w-md mx-auto lg:mx-0">
-              Connect with reliable truck providers and load providers in our marketplace. Fast, secure, and efficient
-              logistics management.
+            <p class="text-xl text-gray-200 max-w-3xl mx-auto mb-12">
+              Find the perfect truck for your load or connect with reliable carriers. 
+              Streamline your logistics with our trusted platform.
             </p>
-            <div class="mt-8 sm:flex sm:justify-center lg:justify-start gap-4">
-              <div>
-                <NuxtLink to="/auth/register"
-                  class="w-full flex items-center justify-center px-8 py-3 text-base font-medium rounded-md text-white bg-[#0070f3] hover:bg-[#0060df] transition-colors shadow-lg shadow-[#0070f3]/20 md:py-4 md:text-lg md:px-10">
-                  Get Started
-                </NuxtLink>
-              </div>
-              <div class="mt-3 sm:mt-0">
-                <NuxtLink to="/auth/login"
-                  class="w-full flex items-center justify-center px-8 py-3 text-base font-medium rounded-md text-white bg-transparent border-2 border-white/30 hover:bg-white/10 transition-colors md:py-4 md:text-lg md:px-10">
-                  Sign In
-                </NuxtLink>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Features Section -->
-    <div class="py-20 bg-white">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center">
-          <h2 class="text-base text-[#0070f3] font-semibold tracking-wide uppercase">Features</h2>
-          <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-            A better way to manage logistics
-          </p>
-          <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
-            Our platform connects truck providers with load providers, making logistics management simple and efficient.
-          </p>
-        </div>
-
-        <div class="mt-16">
-          <div class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-12 md:gap-y-12">
-            <div class="relative">
-              <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-[#0070f3] text-white shadow-lg">
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div class="ml-16">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Easy Matching</h3>
-                <p class="mt-2 text-base text-gray-500">
-                  Find the perfect match between trucks and loads with our intelligent matching system.
-                </p>
-              </div>
-            </div>
-
-            <div class="relative">
-              <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-[#0070f3] text-white shadow-lg">
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <div class="ml-16">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Secure Payments</h3>
-                <p class="mt-2 text-base text-gray-500">
-                  Handle payments securely with our integrated payment system.
-                </p>
-              </div>
-            </div>
-
-            <div class="relative">
-              <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-[#0070f3] text-white shadow-lg">
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <div class="ml-16">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Verified Partners</h3>
-                <p class="mt-2 text-base text-gray-500">
-                  Work with verified truck and load providers for peace of mind.
-                </p>
-              </div>
-            </div>
-
-            <div class="relative">
-              <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-[#0070f3] text-white shadow-lg">
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div class="ml-16">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Real-time Tracking</h3>
-                <p class="mt-2 text-base text-gray-500">
-                  Track your shipments in real-time with our advanced tracking system.
-                </p>
-              </div>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+              <NuxtLink to="/auth/register?role=truck-provider"
+                class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-white bg-[#0070f3] hover:bg-[#0060df] transition-colors">
+                Register as Truck Provider
+              </NuxtLink>
+              <NuxtLink to="/auth/register?role=load-provider"
+                class="inline-flex items-center justify-center px-8 py-4 border border-white/30 text-base font-medium rounded-md text-white hover:bg-white/10 transition-colors">
+                Register as Load Provider
+              </NuxtLink>
             </div>
           </div>
         </div>
@@ -135,7 +43,7 @@
     </div>
 
     <!-- Available Trucks Section -->
-    <div class="py-20 bg-gray-50">
+    <div class="py-20 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
           <h2 class="text-base text-[#0070f3] font-semibold tracking-wide uppercase">Available Trucks</h2>
@@ -233,7 +141,7 @@
     </div>
 
     <!-- Available Loads Section -->
-    <div class="py-20 bg-white">
+    <div class="py-20 bg-gray-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
           <h2 class="text-base text-[#0070f3] font-semibold tracking-wide uppercase">Available Loads</h2>
@@ -291,6 +199,12 @@
 
           <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             <div v-for="load in loads" :key="load.id" class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+              <div class="relative h-52">
+                <img :src="(load.images && load.images.length > 0) ? load.images[0] : '/images/load-placeholder.webp'" :alt="load.name" class="w-full h-full object-cover" />
+                <div class="absolute top-4 right-4 bg-[#0070f3] text-white text-xs font-bold px-2 py-1 rounded-full">
+                  Available
+                </div>
+              </div>
               <div class="p-6">
                 <div class="flex justify-between">
                   <h3 class="text-lg font-semibold text-gray-900">{{ load.name }}</h3>
@@ -354,172 +268,104 @@
       </div>
     </div>
 
-    <!-- Testimonials Section -->
-    <div class="bg-gray-50 py-20">
+    <!-- Knowledge Base / How To Section -->
+    <section class="bg-white py-16">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center">
-          <h2 class="text-base text-[#0070f3] font-semibold tracking-wide uppercase">Testimonials</h2>
-          <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-            Trusted by logistics professionals
-          </p>
-          <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
-            Hear what our users have to say about their experience with our platform
-          </p>
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-gray-900">How It Works</h2>
+          <p class="mt-4 text-lg text-gray-600">Simple steps to get started with TruckX</p>
         </div>
-        <div class="mt-12">
-          <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-            <div class="bg-white p-8 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl relative">
-              <!-- Quote mark -->
-              <div class="absolute top-6 right-8 text-[#0070f3]/10">
-                <svg class="h-16 w-16" fill="currentColor" viewBox="0 0 32 32">
-                  <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
-                </svg>
-              </div>
-              <div class="mb-6">
-                <div class="flex items-center">
-                  <div class="h-12 w-12 rounded-full bg-[#0070f3]/10 flex items-center justify-center text-[#0070f3] font-bold">
-                    JD
-                  </div>
-                  <div class="ml-4">
-                    <h4 class="text-lg font-semibold text-gray-900">John Doe</h4>
-                    <p class="text-[#0070f3]">Truck Provider</p>
-                  </div>
-                </div>
-              </div>
-              <div class="flex flex-col justify-between space-y-4">
-                <p class="text-gray-600">
-                  "This platform has completely transformed my business. I've found consistent work and reliable clients. The user interface is intuitive and the support team is always helpful."
-                </p>
-                <div class="flex items-center text-[#0070f3]">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div class="bg-white p-8 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl relative">
-              <!-- Quote mark -->
-              <div class="absolute top-6 right-8 text-[#0070f3]/10">
-                <svg class="h-16 w-16" fill="currentColor" viewBox="0 0 32 32">
-                  <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
-                </svg>
-              </div>
-              <div class="mb-6">
-                <div class="flex items-center">
-                  <div class="h-12 w-12 rounded-full bg-[#0070f3]/10 flex items-center justify-center text-[#0070f3] font-bold">
-                    AS
-                  </div>
-                  <div class="ml-4">
-                    <h4 class="text-lg font-semibold text-gray-900">Alice Smith</h4>
-                    <p class="text-[#0070f3]">Load Provider</p>
-                  </div>
-                </div>
-              </div>
-              <div class="flex flex-col justify-between space-y-4">
-                <p class="text-gray-600">
-                  "Finding reliable trucks has never been easier. The platform is intuitive and the service is excellent. I've been able to save time and money by efficiently connecting with the right carriers."
-                </p>
-                <div class="flex items-center text-[#0070f3]">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div class="bg-white p-8 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl relative">
-              <!-- Quote mark -->
-              <div class="absolute top-6 right-8 text-[#0070f3]/10">
-                <svg class="h-16 w-16" fill="currentColor" viewBox="0 0 32 32">
-                  <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
-                </svg>
-              </div>
-              <div class="mb-6">
-                <div class="flex items-center">
-                  <div class="h-12 w-12 rounded-full bg-[#0070f3]/10 flex items-center justify-center text-[#0070f3] font-bold">
-                    AS
-                  </div>
-                  <div class="ml-4">
-                    <h4 class="text-lg font-semibold text-gray-900">Alice Smith</h4>
-                    <p class="text-[#0070f3]">Load Provider</p>
-                  </div>
-                </div>
-              </div>
-              <div class="flex flex-col justify-between space-y-4">
-                <p class="text-gray-600">
-                  "Finding reliable trucks has never been easier. The platform is intuitive and the service is excellent."
-                </p>
-                <div class="flex items-center text-[#0070f3]">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- CTA Section -->
-    <div class="bg-gradient-to-br from-[#0070f3] to-[#0050b3]">
-      <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:py-20 lg:px-8 lg:flex lg:items-center lg:justify-between">
-        <h2 class="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-          <span class="block">Ready to get started?</span>
-          <span class="block text-blue-100">Join our platform today.</span>
-        </h2>
-        <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0 gap-4">
-          <div class="inline-flex rounded-md shadow">
-            <NuxtLink to="/auth/register"
-              class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-[#0070f3] bg-white hover:bg-gray-100 transition-colors">
-              Get started
-            </NuxtLink>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Step 1 -->
+          <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-100">
+            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-[#0070f3] text-white mb-4">
+              <span class="text-xl font-bold">1</span>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Create Your Account</h3>
+            <p class="text-gray-600">
+              Sign up as either a truck provider or load provider. Complete your profile with necessary details and documentation.
+            </p>
           </div>
-          <div class="inline-flex rounded-md shadow">
-            <NuxtLink to="/auth/login"
-              class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#0050b3] hover:bg-[#004099] transition-colors">
-              Sign in
-            </NuxtLink>
+
+          <!-- Step 2 -->
+          <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-100">
+            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-[#0070f3] text-white mb-4">
+              <span class="text-xl font-bold">2</span>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">List Your Resources</h3>
+            <p class="text-gray-600">
+              Truck providers can list their available vehicles, while load providers can post their cargo requirements.
+            </p>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-100">
+            <div class="flex items-center justify-center h-12 w-12 rounded-md bg-[#0070f3] text-white mb-4">
+              <span class="text-xl font-bold">3</span>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Connect and Transport</h3>
+            <p class="text-gray-600">
+              Browse available matches, communicate with potential partners, and complete your transport needs efficiently.
+            </p>
+          </div>
+        </div>
+
+        <!-- Additional Resources -->
+        <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- For Truck Providers -->
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">For Truck Providers</h3>
+            <ul class="space-y-3">
+              <li class="flex items-start">
+                <svg class="h-6 w-6 text-[#0070f3] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-gray-600">Create detailed truck profiles with specifications and availability</span>
+              </li>
+              <li class="flex items-start">
+                <svg class="h-6 w-6 text-[#0070f3] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-gray-600">Browse and bid on available loads</span>
+              </li>
+              <li class="flex items-start">
+                <svg class="h-6 w-6 text-[#0070f3] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-gray-600">Manage your fleet and track deliveries</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- For Load Providers -->
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">For Load Providers</h3>
+            <ul class="space-y-3">
+              <li class="flex items-start">
+                <svg class="h-6 w-6 text-[#0070f3] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-gray-600">Post your cargo requirements with detailed specifications</span>
+              </li>
+              <li class="flex items-start">
+                <svg class="h-6 w-6 text-[#0070f3] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-gray-600">Compare and select from available truck providers</span>
+              </li>
+              <li class="flex items-start">
+                <svg class="h-6 w-6 text-[#0070f3] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-gray-600">Track your shipments in real-time</span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
-    </div>
-    
+    </section>
+
     <!-- Truck Detail Modal -->
     <Modal v-model="showTruckModal" title="Truck Details" :show-primary-button="false" secondary-button-text="Close">
       <TruckDetailModal :truck="selectedTruck" />
@@ -529,6 +375,28 @@
     <Modal v-model="showLoadModal" title="Load Details" :show-primary-button="false" secondary-button-text="Close">
       <LoadDetailModal :load="selectedLoad" />
     </Modal>
+
+    <!-- Quick Links -->
+    <div>
+      <h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase">Quick Links</h3>
+      <ul class="mt-4 space-y-4">
+        <li>
+          <NuxtLink to="/auth/login" class="text-base text-gray-300 hover:text-white">
+            Login
+          </NuxtLink>
+        </li>
+        <li>
+          <NuxtLink to="/auth/register" class="text-base text-gray-300 hover:text-white">
+            Register
+          </NuxtLink>
+        </li>
+        <li>
+          <NuxtLink to="/dashboard" class="text-base text-gray-300 hover:text-white">
+            Dashboard
+          </NuxtLink>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -537,6 +405,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import Modal from '~/components/Modal.vue'
 import TruckDetailModal from '~/components/TruckDetailModal.vue'
 import LoadDetailModal from '~/components/LoadDetailModal.vue'
+import LoadImageGallery from '~/components/LoadImageGallery.vue'
 
 // Slideshow data
 const slides = [

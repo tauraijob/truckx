@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
         const loads = await prisma.load.findMany({
             where: {
                 isAvailable: true,
-                // Exclude loads with active orders (PENDING, ACCEPTED, or IN_TRANSIT)
+                // Exclude loads with active orders
                 NOT: {
                     orders: {
                         some: {
@@ -45,115 +45,117 @@ export default defineEventHandler(async (event) => {
             },
             take: limitNum,
             orderBy: {
-                createdAt: 'desc' // Show newest loads first
+                createdAt: 'desc'
+            },
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                weight: true,
+                volume: true,
+                pickupLocation: true,
+                deliveryLocation: true,
+                distance: true,
+                price: true,
+                type: true,
+                images: true,
+                specifications: true,
+                isAvailable: true,
+                provider: {
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
+                }
             }
         })
 
         console.log(`✅ PUBLIC LOADS API: Found ${loads.length} available loads`)
 
         // Format the loads for public display
-        // Remove sensitive information like provider details
-        const publicLoads = loads.map(load => ({
-            id: load.id,
-            name: load.title || 'Unnamed Load',
-            status: load.isAvailable ? 'Available' : 'Unavailable',
-            weight: load.weight || 5,
-            weightUnit: 'tons',
-            pickupDate: load.pickupDate || new Date(Date.now() + 86400000 * 3).toISOString(), // Default to 3 days from now
-            origin: load.pickupLocation || 'Origin Location',
-            destination: load.deliveryLocation || 'Destination Location',
-            price: load.price || 1000
-        }))
-
-        // If no loads found, provide demo data for the frontend
-        if (publicLoads.length === 0) {
-            console.log('⚠️ PUBLIC LOADS API: No available loads found, returning demo data')
-            return {
-                loads: [
-                    {
-                        id: 'demo1',
-                        name: 'Electronics Shipment',
-                        status: 'Available',
-                        weight: 5,
-                        weightUnit: 'tons',
-                        pickupDate: new Date(Date.now() + 86400000 * 3).toISOString(),
-                        origin: 'San Francisco, CA',
-                        destination: 'Seattle, WA',
-                        price: 2500
-                    },
-                    {
-                        id: 'demo2',
-                        name: 'Furniture Delivery',
-                        status: 'Available',
-                        weight: 3,
-                        weightUnit: 'tons',
-                        pickupDate: new Date(Date.now() + 86400000 * 5).toISOString(),
-                        origin: 'Miami, FL',
-                        destination: 'Atlanta, GA',
-                        price: 1800
-                    },
-                    {
-                        id: 'demo3',
-                        name: 'Agricultural Products',
-                        status: 'Available',
-                        weight: 12,
-                        weightUnit: 'tons',
-                        pickupDate: new Date(Date.now() + 86400000 * 7).toISOString(),
-                        origin: 'Dallas, TX',
-                        destination: 'Houston, TX',
-                        price: 3200
-                    }
-                ]
+        const publicLoads = loads.map(load => {
+            // Parse specifications if they exist
+            let specifications = {}
+            try {
+                specifications = typeof load.specifications === 'string'
+                    ? JSON.parse(load.specifications)
+                    : load.specifications || {}
+            } catch (e) {
+                console.error('Error parsing specifications:', e)
+                specifications = {
+                    requiresRefrigeration: false,
+                    fragile: false,
+                    hazardous: false,
+                    pickupDate: new Date(Date.now() + 86400000 * 3).toISOString(),
+                    deliveryDate: new Date(Date.now() + 86400000 * 7).toISOString()
+                }
             }
+
+            // Parse images if they exist
+            let images = []
+            try {
+                // First try to get images from the images field
+                if (load.images) {
+                    images = typeof load.images === 'string'
+                        ? JSON.parse(load.images)
+                        : load.images
+                }
+                // If no images in the images field, try to get from specifications._images
+                if (images.length === 0 && specifications && specifications._images) {
+                    images = specifications._images
+                }
+                // If still no images, use default placeholder
+                if (images.length === 0) {
+                    images = ['/images/load-placeholder.webp']
+                }
+            } catch (e) {
+                console.error('Error parsing images:', e)
+                images = ['/images/load-placeholder.webp']
+            }
+
+            // Get dates from specifications
+            const pickupDate = specifications.pickupDate || new Date(Date.now() + 86400000 * 3).toISOString()
+            const deliveryDate = specifications.deliveryDate || new Date(Date.now() + 86400000 * 7).toISOString()
+
+            // Log the images for debugging
+            console.log(`Load ${load.id} images:`, images)
+
+            return {
+                id: load.id,
+                name: load.title || 'Unnamed Load',
+                description: load.description || 'No description available',
+                weight: load.weight || 5,
+                weightUnit: 'tons',
+                volume: load.volume || 200,
+                volumeUnit: 'cubic feet',
+                origin: load.pickupLocation || 'Unknown Location',
+                destination: load.deliveryLocation || 'Unknown Location',
+                distance: load.distance || 0,
+                price: load.price || 1000,
+                status: 'Available',
+                type: load.type || 'Standard',
+                pickupDate,
+                deliveryDate,
+                images: images, // Return the full images array
+                specifications: {
+                    requiresRefrigeration: specifications.requiresRefrigeration || false,
+                    fragile: specifications.fragile || false,
+                    hazardous: specifications.hazardous || false
+                },
+                providerName: load.provider ? `${load.provider.firstName} ${load.provider.lastName}` : 'Unknown Provider'
+            }
+        })
+
+        // If no loads found, return empty array
+        if (publicLoads.length === 0) {
+            console.log('⚠️ PUBLIC LOADS API: No available loads found')
+            return { loads: [] }
         }
 
-        return {
-            loads: publicLoads
-        }
+        console.log('Returning loads:', JSON.stringify(publicLoads, null, 2))
+        return { loads: publicLoads }
     } catch (error: any) {
         console.error('❌ PUBLIC LOADS API: Error fetching loads:', error)
-
-        // Return demo data in case of error to ensure the UI can still function
-        console.log('⚠️ PUBLIC LOADS API: Error occurred, returning demo data')
-        return {
-            loads: [
-                {
-                    id: 'demo1',
-                    name: 'Electronics Shipment',
-                    status: 'Available',
-                    weight: 5,
-                    weightUnit: 'tons',
-                    pickupDate: new Date(Date.now() + 86400000 * 3).toISOString(),
-                    origin: 'San Francisco, CA',
-                    destination: 'Seattle, WA',
-                    price: 2500
-                },
-                {
-                    id: 'demo2',
-                    name: 'Furniture Delivery',
-                    status: 'Available',
-                    weight: 3,
-                    weightUnit: 'tons',
-                    pickupDate: new Date(Date.now() + 86400000 * 5).toISOString(),
-                    origin: 'Miami, FL',
-                    destination: 'Atlanta, GA',
-                    price: 1800
-                },
-                {
-                    id: 'demo3',
-                    name: 'Agricultural Products',
-                    status: 'Available',
-                    weight: 12,
-                    weightUnit: 'tons',
-                    pickupDate: new Date(Date.now() + 86400000 * 7).toISOString(),
-                    origin: 'Dallas, TX',
-                    destination: 'Houston, TX',
-                    price: 3200
-                }
-            ]
-        }
-
-        // Don't throw errors for the public API to ensure the UI always gets data
-        // We log the error for debugging purposes only
+        return { loads: [] }
     }
 }) 

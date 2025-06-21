@@ -1,19 +1,21 @@
-import { PrismaClient, OrderStatus } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
+import { OrderStatus } from '~/server/utils/enums'
 import { getServerSession } from '#auth'
 
 const prisma = new PrismaClient()
 
+// Use the server-side OrderStatus enum for the response type
 interface OrderResponse {
     id: string;
     loadName: string;
     truckName: string;
-    status: OrderStatus;
+    status: OrderStatus;  // This will be converted to a string when sent to the frontend
     createdAt: Date;
 }
 
 export default defineEventHandler(async (event) => {
     try {
-        console.log('Admin recent orders API: Starting data retrieval (no auth check)')
+        console.log('Admin recent orders API: Starting data retrieval')
 
         // TEMPORARILY DISABLED AUTHENTICATION CHECKS
         // Note: This should be re-enabled in production
@@ -44,11 +46,12 @@ export default defineEventHandler(async (event) => {
         console.log(`Found ${recentOrders.length} recent orders`)
 
         // Transform the data to match the frontend interface
+        // The status will be sent as a string to the frontend
         const response: OrderResponse[] = recentOrders.map(order => ({
             id: order.id,
             loadName: order.load?.name || 'Unknown Load',
             truckName: order.truck?.name || 'Unknown Truck',
-            status: order.status,
+            status: order.status as OrderStatus,  // Cast to ensure type safety
             createdAt: order.createdAt
         }))
 

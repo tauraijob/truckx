@@ -154,8 +154,8 @@
                                             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ order.truckName }}</td>
                                             <td class="whitespace-nowrap px-6 py-4 text-sm">
                                                 <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5"
-                                                    :class="getStatusClass(order.status)">
-                                                    {{ order.status }}
+                                                    :class="getStatusBadgeClass(order.status)">
+                                                    {{ formatOrderStatus(order.status) }}
                                                 </span>
                                             </td>
                                             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{{ formatDate(order.createdAt) }}</td>
@@ -223,7 +223,7 @@ import {
     CurrencyDollarIcon,
     DocumentTextIcon
 } from '@heroicons/vue/24/outline'
-import { OrderStatus } from '@prisma/client'
+import type { OrderStatus } from '~/types'
 
 definePageMeta({
     layout: 'admin-dashboard',
@@ -248,8 +248,8 @@ interface OrderItem {
     id: string;
     loadName: string;
     truckName: string;
-    status: OrderStatus;
-    createdAt: Date;
+    status: string;
+    createdAt: string;
 }
 
 const recentOrders = ref<OrderItem[]>([])
@@ -280,8 +280,28 @@ function formatDate(dateString: string | Date): string {
     })
 }
 
-// Get status styling class
-function getStatusClass(status: string): string {
+// Format order status for display
+const formatOrderStatus = (status: string): string => {
+    switch (status) {
+        case 'PENDING':
+            return 'Pending'
+        case 'ACCEPTED':
+            return 'Accepted'
+        case 'IN_TRANSIT':
+            return 'In Transit'
+        case 'DELIVERED':
+            return 'Delivered'
+        case 'CANCELLED':
+            return 'Cancelled'
+        case 'COMPLETED':
+            return 'Completed'
+        default:
+            return status
+    }
+}
+
+// Get CSS class for status badge
+const getStatusBadgeClass = (status: string): string => {
     switch (status) {
         case 'PENDING':
             return 'bg-yellow-100 text-yellow-800'
@@ -293,6 +313,8 @@ function getStatusClass(status: string): string {
             return 'bg-green-100 text-green-800'
         case 'CANCELLED':
             return 'bg-red-100 text-red-800'
+        case 'COMPLETED':
+            return 'bg-green-100 text-green-800'
         default:
             return 'bg-gray-100 text-gray-800'
     }
@@ -369,7 +391,7 @@ async function fetchDashboardData() {
             ...order,
             loadName: order.loadName || 'Unknown Load',
             truckName: order.truckName || 'Unknown Truck',
-            createdAt: new Date(order.createdAt || new Date())
+            createdAt: new Date(order.createdAt || new Date()).toISOString()
         }));
     } catch (error) {
         console.error('Error in fetchDashboardData:', error);

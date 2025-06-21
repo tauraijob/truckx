@@ -1,9 +1,47 @@
 import { verifyToken, type AuthToken } from '../utils/auth'
+import { fileURLToPath } from 'url'
+import { resolve } from 'pathe'
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
+    const path = event.node.req.url
+    if (path === '/api/auth/forgot-password' || path === '/api/auth/reset-password') {
+        // Skip auth for forgot-password and reset-password endpoints
+        return
+    }
+
     // Skip auth check for non-API routes
     if (!event.path.startsWith('/api/')) {
         return
+    }
+
+    // --- Check for skipAuth export on the route handler ---
+    try {
+        // Only check for skipAuth on /api/ routes
+        // Remove query string and .ts/.js extension
+        let routePath = event.path
+        if (routePath.endsWith('.ts') || routePath.endsWith('.js')) {
+            routePath = routePath.replace(/\.(ts|js)$/, '')
+        }
+        // Map /api/foo/bar to server/api/foo/bar(.ts|.js)
+        const handlerPath = resolve(
+            fileURLToPath(import.meta.url),
+            '../../api' + routePath.replace('/api', '')
+        )
+        // Try both .ts and .js
+        let handlerModule
+        try {
+            handlerModule = await import(handlerPath + '.ts')
+        } catch {
+            try {
+                handlerModule = await import(handlerPath + '.js')
+            } catch { }
+        }
+        if (handlerModule && handlerModule.skipAuth) {
+            console.log(`[Auth Middleware] skipAuth detected for ${event.path}`)
+            return
+        }
+    } catch (e) {
+        // Ignore errors in skipAuth check
     }
 
     console.log(`[Auth Middleware] Processing request for path: ${event.path}`)

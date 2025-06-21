@@ -22,7 +22,7 @@ export default defineNuxtConfig({
     payloadExtraction: false
   },
   build: {
-    transpile: ['bcryptjs', 'jsonwebtoken']
+    transpile: ['bcryptjs', 'jsonwebtoken', '@headlessui/vue']
   },
   vite: {
     optimizeDeps: {

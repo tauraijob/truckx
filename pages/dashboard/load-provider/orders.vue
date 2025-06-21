@@ -455,6 +455,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import type { Order, OrderStatus } from '~/types'
 import { 
   MagnifyingGlassIcon,
   ClipboardDocumentCheckIcon,
@@ -472,34 +473,25 @@ definePageMeta({
   middleware: ['auth']
 })
 
-// Order interface
-interface Order {
-  id: string;
-  loadId: string;
-  loadName: string;
-  truckId: string;
-  truckName: string;
-  truckProviderId: string;
-  truckProviderName: string;
-  origin: string;
-  destination: string;
-  pickupDate: string;
-  deliveryDate: string;
-  price: number;
-  status: string;
-  createdAt: string;
-  paymentStatus: string;
+interface OrderWithDetails extends Order {
+  loadName: string
+  truckName: string
+  truckProviderName: string
+  origin: string
+  destination: string
+  pickupDate: string
+  deliveryDate: string
 }
 
 // Pagination and filters
 const currentPage = ref(1)
 const itemsPerPage = 10
 const searchQuery = ref('')
-const filterStatus = ref('')
+const filterStatus = ref<OrderStatus | ''>('')
 const sortBy = ref('date-desc')
 
 // Orders data
-const orders = ref<Order[]>([])
+const orders = ref<OrderWithDetails[]>([])
 const loading = ref(true)
 
 // Modals and selected order
@@ -507,7 +499,7 @@ const showOrderDetailsModal = ref(false)
 const showCancelModal = ref(false)
 const showAcceptModal = ref(false)
 const showPaymentModal = ref(false)
-const selectedOrder = ref<Order | null>(null)
+const selectedOrder = ref<OrderWithDetails | null>(null)
 const cancellationReason = ref('')
 const paymentAmount = ref(0)
 const paymentMethod = ref('')
@@ -620,17 +612,19 @@ function formatDate(dateString: string): string {
 }
 
 // Format status
-function formatStatus(status: string): string {
+function formatStatus(status: OrderStatus): string {
   switch (status) {
-    case 'PENDING':
+    case OrderStatus.PENDING:
       return 'Pending'
-    case 'ACCEPTED':
+    case OrderStatus.ACCEPTED:
       return 'Accepted'
-    case 'IN_TRANSIT':
+    case OrderStatus.IN_TRANSIT:
       return 'In Transit'
-    case 'DELIVERED':
+    case OrderStatus.DELIVERED:
       return 'Delivered'
-    case 'CANCELLED':
+    case OrderStatus.COMPLETED:
+      return 'Completed'
+    case OrderStatus.CANCELLED:
       return 'Cancelled'
     default:
       return status
@@ -638,17 +632,18 @@ function formatStatus(status: string): string {
 }
 
 // Get status badge class
-function getStatusClass(status: string): string {
+function getStatusClass(status: OrderStatus): string {
   switch (status) {
-    case 'PENDING':
+    case OrderStatus.PENDING:
       return 'bg-yellow-100 text-yellow-800'
-    case 'ACCEPTED':
+    case OrderStatus.ACCEPTED:
       return 'bg-blue-100 text-blue-800'
-    case 'IN_TRANSIT':
+    case OrderStatus.IN_TRANSIT:
       return 'bg-purple-100 text-purple-800'
-    case 'DELIVERED':
+    case OrderStatus.DELIVERED:
+    case OrderStatus.COMPLETED:
       return 'bg-green-100 text-green-800'
-    case 'CANCELLED':
+    case OrderStatus.CANCELLED:
       return 'bg-red-100 text-red-800'
     default:
       return 'bg-gray-100 text-gray-800'
@@ -656,25 +651,25 @@ function getStatusClass(status: string): string {
 }
 
 // Modal functions
-function openOrderDetails(order: Order) {
+function openOrderDetails(order: OrderWithDetails) {
   selectedOrder.value = order
   showOrderDetailsModal.value = true
 }
 
-function openCancelModal(order: Order) {
+function openCancelModal(order: OrderWithDetails) {
   selectedOrder.value = order
   cancellationReason.value = ''
   showCancelModal.value = true
 }
 
-function openAcceptModal(order: Order) {
+function openAcceptModal(order: OrderWithDetails) {
   selectedOrder.value = order
   showAcceptModal.value = true
 }
 
-function openPaymentModal(order: Order) {
+function openPaymentModal(order: OrderWithDetails) {
   selectedOrder.value = order
-  paymentAmount.value = 0
+  paymentAmount.value = order.price
   paymentMethod.value = ''
   paymentNotes.value = ''
   showPaymentModal.value = true

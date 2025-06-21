@@ -105,15 +105,6 @@
             <h3 class="text-white text-lg font-semibold mb-4">Quick Links</h3>
             <ul class="space-y-2">
               <li>
-                <NuxtLink to="/" class="text-gray-300 hover:text-primary-400">Home</NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/about" class="text-gray-300 hover:text-primary-400">About</NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/contact" class="text-gray-300 hover:text-primary-400">Contact</NuxtLink>
-              </li>
-              <li>
                 <NuxtLink to="/auth/login" class="text-gray-300 hover:text-primary-400">Sign In</NuxtLink>
               </li>
               <li>

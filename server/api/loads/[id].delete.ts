@@ -1,4 +1,5 @@
 import { prisma } from '#imports'
+import { LoadStatus, OrderStatus } from '~/types'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -31,9 +32,18 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Get load
+        // Get load with its orders
         const load = await prisma.load.findUnique({
-            where: { id }
+            where: { id },
+            include: {
+                orders: {
+                    where: {
+                        status: {
+                            in: [OrderStatus.PENDING, OrderStatus.ACCEPTED, OrderStatus.IN_TRANSIT]
+                        }
+                    }
+                }
+            }
         })
 
         if (!load) {
@@ -51,15 +61,19 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Check if load is associated with any orders
-        const orders = await prisma.order.findMany({
-            where: { loadId: id }
-        })
-
-        if (orders.length > 0) {
+        // Check if load can be deleted based on its status
+        if (load.status !== LoadStatus.PENDING) {
             throw createError({
                 statusCode: 400,
-                message: 'Cannot delete load that is associated with orders'
+                message: `Cannot delete load with status ${load.status}. Only loads with PENDING status can be deleted.`
+            })
+        }
+
+        // Check if load is associated with any active orders
+        if (load.orders.length > 0) {
+            throw createError({
+                statusCode: 400,
+                message: 'Cannot delete load that is associated with active orders'
             })
         }
 
@@ -69,9 +83,11 @@ export default defineEventHandler(async (event) => {
         })
 
         return {
+            success: true,
             message: 'Load deleted successfully'
         }
     } catch (error: any) {
+        console.error('Error deleting load:', error)
         throw createError({
             statusCode: error.statusCode || 500,
             message: error.message || 'Error deleting load'

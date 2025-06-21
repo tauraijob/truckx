@@ -8,6 +8,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -40,6 +44,16 @@ enum PaymentType {
   EARNING
 }
 
+enum LoadStatus {
+  PENDING
+  AVAILABLE
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  COMPLETED
+}
+
 model User {
   id          String   @id @default(uuid())
   email       String   @unique
@@ -53,12 +67,13 @@ model User {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  trucks      Truck[]      @relation("TruckProvider")
-  loads       Load[]       @relation("LoadProvider")
-  orders      Order[]      @relation("TruckProviderOrders")
-  loadOrders  Order[]      @relation("LoadProviderOrders")
-  payments    Payment[]
-  paymentInfo PaymentInfo?
+  trucks             Truck[]              @relation("TruckProvider")
+  loads              Load[]               @relation("LoadProvider")
+  orders             Order[]              @relation("TruckProviderOrders")
+  loadOrders         Order[]              @relation("LoadProviderOrders")
+  payments           Payment[]
+  paymentInfo        PaymentInfo?
+  PasswordResetToken PasswordResetToken[]
 }
 
 model Truck {
@@ -81,7 +96,7 @@ model Truck {
 }
 
 model Load {
-  id               String   @id @default(uuid())
+  id               String     @id @default(uuid())
   title            String
   description      String
   weight           Float
@@ -91,11 +106,12 @@ model Load {
   distance         Float
   price            Float
   type             String
-  images           Json     @default("[]") // JSON array of image URLs for load items
+  status           LoadStatus @default(PENDING)
+  images           Json       @default("[]") // JSON array of image URLs for load items
   specifications   Json // Additional load specifications
-  isAvailable      Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  isAvailable      Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
   // Relations
   providerId String
@@ -156,4 +172,13 @@ model PaymentInfo {
   // Relations
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }

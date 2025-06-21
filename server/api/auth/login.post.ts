@@ -62,6 +62,8 @@ export default defineEventHandler(async (event) => {
 
         console.log('Response user object:', userWithoutPassword)
 
+        console.log("Login endpoint – user:", JSON.stringify(userWithoutPassword, null, 2), "token:", token)
+
         return {
             user: userWithoutPassword,
             token,

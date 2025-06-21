@@ -2,6 +2,7 @@
   <div>
     <div class="mb-6 flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-900">My Trucks</h1>
+      <div class="flex space-x-3">
       <button 
         @click="showAddTruckModal = true"
         class="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700"
@@ -9,6 +10,15 @@
         <PlusIcon class="mr-2 h-5 w-5" />
         Add New Truck
       </button>
+        <button 
+          v-if="selectedTrucks.length > 0"
+          @click="deleteSelectedTrucks"
+          class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700"
+        >
+          <TrashIcon class="mr-2 h-5 w-5" />
+          Delete Selected ({{ selectedTrucks.length }})
+        </button>
+      </div>
     </div>
 
     <!-- Trucks Filters -->
@@ -60,6 +70,14 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <input 
+                type="checkbox" 
+                :checked="isAllSelected" 
+                @change="toggleSelectAll"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+            </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Truck Information</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type & Capacity</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Current Location</th>
@@ -69,6 +87,15 @@
         </thead>
         <tbody class="divide-y divide-gray-200 bg-white">
           <tr v-for="truck in filteredTrucks" :key="truck.id" class="hover:bg-gray-50">
+            <td class="px-6 py-4">
+              <input 
+                type="checkbox" 
+                :checked="selectedTrucks.includes(truck.id)"
+                @change="toggleTruckSelection(truck.id)"
+                :disabled="truck.hasActiveOrder"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50"
+              />
+            </td>
             <td class="px-6 py-4">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
@@ -110,14 +137,24 @@
                 <button 
                   @click="openEditModal(truck)"
                   class="rounded bg-white p-1 text-gray-400 hover:text-blue-600"
+                  title="Edit truck"
                 >
                   <PencilIcon class="h-5 w-5" />
                 </button>
                 <button 
                   @click="openStatusModal(truck)"
                   class="rounded bg-white p-1 text-gray-400 hover:text-green-600"
+                  title="Update status"
                 >
                   <ArrowPathIcon class="h-5 w-5" />
+                </button>
+                <button 
+                  v-if="!truck.hasActiveOrder"
+                  @click="deleteTruck(truck.id)"
+                  class="rounded bg-white p-1 text-gray-400 hover:text-red-600"
+                  title="Delete truck"
+                >
+                  <TrashIcon class="h-5 w-5" />
                 </button>
               </div>
             </td>
@@ -443,6 +480,68 @@
         </div>
       </div>
     </div>
+
+    <!-- Add Delete Confirmation Modal -->
+    <TransitionRoot appear :show="showDeleteModal" as="template">
+      <Dialog as="div" @close="showDeleteModal = false" class="relative z-50">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black bg-opacity-25" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
+                  Delete Truck
+                </DialogTitle>
+                
+                <div class="mt-2">
+                  <p class="text-sm text-gray-500">
+                    Are you sure you want to delete this truck? This action cannot be undone.
+                    {{ truckToDelete?.hasActiveOrder ? 'Note: This truck has an active order and cannot be deleted.' : '' }}
+                  </p>
+                </div>
+
+                <div class="mt-4 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                    @click="showDeleteModal = false"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                    @click="deleteTruck(truckToDelete.id)"
+                    :disabled="isSaving || truckToDelete?.hasActiveOrder"
+                  >
+                    {{ isSaving ? 'Deleting...' : 'Delete Truck' }}
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
@@ -466,7 +565,8 @@ import {
   ClockIcon,
   DocumentTextIcon,
   InformationCircleIcon,
-  PhotoIcon
+  PhotoIcon,
+  TrashIcon
 } from '@heroicons/vue/24/outline'
 import ImageUpload from '~/components/ImageUpload.vue'
 
@@ -537,6 +637,17 @@ const featuredImageUpload = ref<InstanceType<typeof ImageUpload> | null>(null)
 const galleryImageUpload = ref<InstanceType<typeof ImageUpload> | null>(null)
 const featuredImage = ref<string | null>(null)
 const galleryImages = ref<string[]>([])
+
+// Add delete modal state
+const showDeleteModal = ref(false)
+const truckToDelete = ref<Truck | null>(null)
+
+// Add selection state
+const selectedTrucks = ref<string[]>([])
+const isAllSelected = computed(() => {
+  const availableTrucks = filteredTrucks.value.filter(t => !t.hasActiveOrder)
+  return availableTrucks.length > 0 && selectedTrucks.value.length === availableTrucks.length
+})
 
 // Filter and paginate trucks
 const filteredTrucks = computed(() => {
@@ -994,6 +1105,115 @@ async function updateStatus() {
     notification.value = {
       type: 'error',
       message: 'Error updating truck status'
+    }
+    showNotification.value = true
+    setTimeout(() => {
+      showNotification.value = false
+    }, 5000)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// Add delete function
+async function deleteTruck(id: string) {
+  if (!confirm('Are you sure you want to delete this truck?')) return
+  
+  try {
+    isSaving.value = true
+    await $fetch(`/api/trucks/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    
+    // Remove truck from local state
+    trucks.value = trucks.value.filter(t => t.id !== id)
+    
+    // Show success notification
+    notification.value = {
+      type: 'success',
+      message: 'Truck deleted successfully'
+    }
+    showNotification.value = true
+    setTimeout(() => {
+      showNotification.value = false
+    }, 5000)
+  } catch (error: any) {
+    console.error('Error deleting truck:', error)
+    notification.value = {
+      type: 'error',
+      message: error.message || 'Error deleting truck'
+    }
+    showNotification.value = true
+    setTimeout(() => {
+      showNotification.value = false
+    }, 5000)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// Add selection methods
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedTrucks.value = []
+  } else {
+    selectedTrucks.value = filteredTrucks.value
+      .filter(t => !t.hasActiveOrder)
+      .map(t => t.id)
+  }
+}
+
+function toggleTruckSelection(truckId: string) {
+  const index = selectedTrucks.value.indexOf(truckId)
+  if (index === -1) {
+    selectedTrucks.value.push(truckId)
+  } else {
+    selectedTrucks.value.splice(index, 1)
+  }
+}
+
+// Add bulk delete method
+async function deleteSelectedTrucks() {
+  if (!selectedTrucks.value.length) return
+  
+  if (!confirm(`Are you sure you want to delete ${selectedTrucks.value.length} selected truck(s)?`)) return
+  
+  try {
+    isSaving.value = true
+    const deletePromises = selectedTrucks.value.map(id => 
+      $fetch(`/api/trucks/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+    )
+    
+    await Promise.all(deletePromises)
+    
+    // Remove deleted trucks from local state
+    trucks.value = trucks.value.filter(t => !selectedTrucks.value.includes(t.id))
+    
+    // Clear selection
+    selectedTrucks.value = []
+    
+    // Show success notification
+    notification.value = {
+      type: 'success',
+      message: `Successfully deleted ${deletePromises.length} truck(s)`
+    }
+    showNotification.value = true
+    setTimeout(() => {
+      showNotification.value = false
+    }, 5000)
+  } catch (error: any) {
+    console.error('Error deleting trucks:', error)
+    notification.value = {
+      type: 'error',
+      message: error.message || 'Error deleting trucks'
     }
     showNotification.value = true
     setTimeout(() => {
