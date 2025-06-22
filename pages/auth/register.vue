@@ -131,7 +131,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toastification'
+import * as Toastify from 'vue-toastification'
+const { useToast } = Toastify
 
 const router = useRouter()
 const toast = useToast()
@@ -211,7 +212,6 @@ watch(error, (val) => {
   if (val) {
     toast.error(val, {
       timeout: 4000,
-      position: 'top-right',
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true
@@ -233,7 +233,6 @@ async function verifyOtp() {
     })
     toast.success('Email verified! You can now log in.', {
       timeout: 4000,
-      position: 'top-right',
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true
@@ -244,7 +243,6 @@ async function verifyOtp() {
     otpError.value = err.data?.message || 'Invalid OTP. Please try again.'
     toast.error(otpError.value, {
       timeout: 4000,
-      position: 'top-right',
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true

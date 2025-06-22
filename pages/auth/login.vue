@@ -87,7 +87,8 @@
 import { ref, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useRouter } from 'vue-router'
-import { useToast } from 'vue-toastification'
+import * as Toastify from 'vue-toastification'
+const { useToast } = Toastify
 
 const router = useRouter()
 const { login } = useAuth()
