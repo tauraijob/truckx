@@ -129,13 +129,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
-import pkg from 'vue-toastification'
-const { useToast } = pkg
 
 const router = useRouter()
-const toast = useToast()
+const nuxtApp = getCurrentInstance()?.appContext.config.globalProperties || null
 
 const name = ref('')
 const lastName = ref('')
@@ -207,15 +205,10 @@ function closeOtpDialog() {
   otpError.value = ''
 }
 
-// Watch for error changes and show Vue Toastification toast
+// Watch for error changes and show Nuxt Toast
 watch(error, (val) => {
-  if (val) {
-    toast.error(val, {
-      timeout: 4000,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true
-    })
+  if (val && nuxtApp && nuxtApp.$toast) {
+    nuxtApp.$toast.error(val)
     error.value = ''
   }
 })
@@ -231,22 +224,16 @@ async function verifyOtp() {
         otp: otpInput.value
       }
     })
-    toast.success('Email verified! You can now log in.', {
-      timeout: 4000,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true
-    })
+    if (nuxtApp && nuxtApp.$toast) {
+      nuxtApp.$toast.success('Email verified! You can now log in.')
+    }
     closeOtpDialog()
     router.push('/auth/login')
   } catch (err: any) {
     otpError.value = err.data?.message || 'Invalid OTP. Please try again.'
-    toast.error(otpError.value, {
-      timeout: 4000,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true
-    })
+    if (nuxtApp && nuxtApp.$toast) {
+      nuxtApp.$toast.error(otpError.value)
+    }
   } finally {
     otpLoading.value = false
   }
