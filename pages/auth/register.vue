@@ -131,8 +131,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import * as Toastify from 'vue-toastification'
-const { useToast } = Toastify
+import pkg from 'vue-toastification'
+const { useToast } = pkg
 
 const router = useRouter()
 const toast = useToast()
