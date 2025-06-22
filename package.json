@@ -11,6 +11,7 @@
     "create-admin": "npx ts-node --esm scripts/create-admin.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "seed": "node prisma/seed.js",
     "setup": "npm install && prisma generate && nuxt prepare"
   },
   "dependencies": {
