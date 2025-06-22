@@ -6,9 +6,9 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
+    'nuxt-toast',
     '@vueuse/nuxt',
-    '@nuxtjs/color-mode',
-    '@nuxtjs/toast'
+    '@nuxtjs/color-mode'
   ],
   nitro: {
     imports: {
@@ -118,13 +118,3 @@ export default defineNuxtConfig({
     }
   }
 })
-
-// Toast config for @nuxtjs/toast
-export const toast = {
-  position: 'top-right',
-  duration: 4000,
-  keepOnHover: true,
-  theme: 'toasted-primary',
-  iconPack: 'material',
-  register: []
-}

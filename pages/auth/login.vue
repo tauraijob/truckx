@@ -84,12 +84,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch, getCurrentInstance } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 const { login } = useAuth()
-const nuxtApp = getCurrentInstance()?.appContext.config.globalProperties || null
+const toast = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -176,11 +176,6 @@ const handleLogin = async () => {
   }
 }
 
-// Watch for error changes and show Nuxt Toast
-watch(error, (val) => {
-  if (val && nuxtApp && nuxtApp.$toast) {
-    nuxtApp.$toast.error(val)
-    error.value = ''
-  }
-})
+// Watch for error changes and show Vue Toastification toast
+
 </script>
