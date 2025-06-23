@@ -26,6 +26,7 @@
     "@vueuse/nuxt": "^10.7.2",
     "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.8",
+    "formidable": "^3.5.4",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.3",
     "nuxt": "^3.10.1",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
+    "@types/nodemailer": "^6.4.17",
     "prisma": "^5.10.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",

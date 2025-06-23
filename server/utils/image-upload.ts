@@ -4,13 +4,13 @@ import path from 'path'
 import fs from 'fs'
 import { nanoid } from 'nanoid'
 
-// Configure storage
+// Configure storage to use /uploads (not public/uploads)
 const storage = createStorage({
-    driver: fsDriver({ base: './public/uploads' })
+    driver: fsDriver({ base: './uploads' })
 })
 
-// Ensure the upload directory exists
-const uploadDir = path.resolve('./public/uploads')
+// Ensure the upload directory exists (in /uploads)
+const uploadDir = path.join(process.cwd(), 'uploads')
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true })
 }

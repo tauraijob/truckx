@@ -43,7 +43,7 @@
               </div>
               <div class="ml-6">
                 <div class="flex items-center">
-                  <button type="button" class="bg-white px-3 py-1.5 text-sm font-medium text-primary-600 border border-primary-600 rounded-md hover:bg-primary-50">
+                  <button type="button" class="bg-white px-3 py-1.5 text-sm font-medium text-primary-600 border border-primary-600 rounded-md hover:bg-primary-50" @click="avatarFileInput?.click()">
                     Change picture
                   </button>
                   <button type="button" class="ml-3 text-sm text-gray-500 hover:text-gray-700">
@@ -80,6 +80,7 @@
               </button>
             </div>
           </form>
+          <input ref="avatarFileInput" type="file" class="hidden" accept="image/*" @change="handleAvatarChange" />
         </div>
 
         <!-- Company Tab -->
@@ -329,6 +330,30 @@ const paymentInfo = ref({
   accountType: 'checking',
   paymentFrequency: 'biweekly'
 })
+
+// Add a ref for the file input
+const avatarFileInput = ref<HTMLInputElement | null>(null)
+
+// Handle profile image change
+async function handleAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0]
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const response = await fetch('/api/uploads', {
+        method: 'POST',
+        body: formData
+      })
+      if (!response.ok) throw new Error('Failed to upload image')
+      const data = await response.json()
+      profile.value.avatarUrl = data.url // /uploads/filename.ext
+    } catch (e) {
+      alert('Failed to upload profile image.')
+    }
+  }
+}
 
 // Fetch user data
 async function fetchData() {

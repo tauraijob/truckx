@@ -444,32 +444,12 @@ onMounted(async () => {
 })
 
 // Handle image updates
-const handleFeaturedImageUpdate = (file: File | null) => {
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      featuredImage.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  } else {
-    featuredImage.value = null
-  }
+const handleFeaturedImageUpdate = (url: string | null) => {
+  featuredImage.value = url
 }
 
-const handleGalleryImagesUpdate = (files: File[]) => {
-  galleryImages.value = []
-  
-  if (files && files.length > 0) {
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          galleryImages.value.push(e.target.result as string)
-        }
-      }
-      reader.readAsDataURL(file)
-    })
-  }
+const handleGalleryImagesUpdate = (urls: string[]) => {
+  galleryImages.value = urls
 }
 
 const handleImageError = (error: string) => {

@@ -223,6 +223,7 @@ async function verifyOtp() {
     toast.success({
     title: 'Success',
     message: 'Email verified! You can now log in.',
+    position: "topRight",
     timeout: 3000,
 })
     closeOtpDialog()

@@ -89,7 +89,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 const { login } = useAuth()
-const toast = useToast()
+const toast:any = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -127,8 +127,14 @@ const handleLogin = async () => {
     console.log('Login result:', success)
     
     if (!success) {
+      toast.error({
+    title: 'Error on login',
+    message: auth.error.value,
+    position: "topRight",
+    timeout: 3000,
+})
       console.log('Login failed, error:', auth.error.value)
-      error.value = auth.error.value || 'Login failed'
+
       return
     }
 

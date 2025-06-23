@@ -166,15 +166,35 @@ async function fetchAndCreateFile(url: string): Promise<File | null> {
   }
 }
 
+// Helper to upload a file to /api/uploads and return the uploaded URL
+async function uploadFileToUploads(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await fetch('/api/uploads', {
+    method: 'POST',
+    body: formData
+  })
+  if (!response.ok) throw new Error('Failed to upload image')
+  const data = await response.json()
+  return data.url // Should be /uploads/filename.ext
+}
+
 // Featured image handlers
 function triggerFeaturedFileInput() {
   featuredFileInput.value?.click()
 }
 
-function handleFeaturedFileChange(event: Event) {
+async function handleFeaturedFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
     validateAndSetFeaturedImage(input.files[0])
+    try {
+      const url = await uploadFileToUploads(input.files[0])
+      emit('update:featured', url)
+    } catch (e) {
+      featuredError.value = 'Failed to upload image.'
+      emit('error', featuredError.value)
+    }
   }
 }
 
@@ -229,10 +249,20 @@ function triggerGalleryFileInput() {
   galleryFileInput.value?.click()
 }
 
-function handleGalleryFileChange(event: Event) {
+async function handleGalleryFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
     validateAndAddGalleryImages(Array.from(input.files))
+    try {
+      const urls = []
+      for (const file of input.files) {
+        urls.push(await uploadFileToUploads(file))
+      }
+      emit('update:gallery', urls)
+    } catch (e) {
+      galleryError.value = 'Failed to upload one or more images.'
+      emit('error', galleryError.value)
+    }
   }
 }
 
