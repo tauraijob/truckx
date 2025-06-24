@@ -11,7 +11,7 @@ var transport = nodemailer.createTransport({
 
 export async function sendVerificationEmail(email: string, otp: string) {
   const mailOptions = {
-    from: 'no-reply@truckx.com',
+    from: 'no-reply@mucholinktrucking.com',
     to: email,
     subject: 'Verify your TruckX account',
     html: `
@@ -33,11 +33,11 @@ export async function sendVerificationEmail(email: string, otp: string) {
       </div>
     `
   }
-  await transporter.sendMail(mailOptions)
+  await transport.sendMail(mailOptions)
 }
 
 export async function sendResetEmail(email: string, otp: string) {
-    // In production, send an actual email with the OTP
-    console.log(`Send password reset OTP to ${email}: ${otp}`)
-    // TODO: Integrate with real email service
+  // In production, send an actual email with the OTP
+  console.log(`Send password reset OTP to ${email}: ${otp}`)
+  // TODO: Integrate with real email service
 } 

@@ -190,11 +190,14 @@ const handleRegister = async () => {
       }
     })
     console.log('Registration successful:', response)
-    // Show OTP dialog instead of redirecting
-    showOtpDialog.value = true
+    if (response.success) {
+      showOtpDialog.value = true
+    } else {
+      toast.error(response.message || 'Registration failed')
+    }
   } catch (err: any) {
     console.error('Registration failed:', err)
-    error.value = err.data?.message || 'An error occurred during registration. Please try again.'
+    toast.error(err.data?.message || 'An error occurred during registration. Please try again.')
   } finally {
     loading.value = false
   }
