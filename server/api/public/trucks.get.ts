@@ -1,17 +1,19 @@
 import { prisma } from '#imports'
+import { getQuery } from 'h3'
+
+const devLog = (...args: any[]) => { if (process.env.NODE_ENV !== 'production') console.log(...args) }
 
 export default defineEventHandler(async (event) => {
     try {
-        console.log('🌎 PUBLIC TRUCKS API: Fetching trucks for public view')
+        devLog('🌎 PUBLIC TRUCKS API: Fetching trucks for public view')
 
-        // Get query parameters
-        const query = getQuery(event)
-        const { limit = '3' } = query
-
-        // Parse limit to number
+        // Add pagination
+        const { page = 1, limit = 20 } = getQuery(event)
+        const pageNum = parseInt(page as string)
         const limitNum = parseInt(limit as string)
+        const skip = (pageNum - 1) * limitNum
 
-        console.log(`🔍 PUBLIC TRUCKS API: Fetching up to ${limitNum} trucks`)
+        devLog(`🔍 PUBLIC TRUCKS API: Fetching up to ${limitNum} trucks`)
 
         // Fetch only available trucks
         const trucks = await prisma.truck.findMany({
@@ -19,6 +21,7 @@ export default defineEventHandler(async (event) => {
                 isAvailable: true
             },
             take: limitNum,
+            skip,
             orderBy: {
                 createdAt: 'desc'
             },
@@ -41,7 +44,14 @@ export default defineEventHandler(async (event) => {
             }
         })
 
-        console.log(`✅ PUBLIC TRUCKS API: Found ${trucks.length} available trucks`)
+        // Get total count for pagination
+        const total = await prisma.truck.count({
+            where: {
+                isAvailable: true
+            }
+        })
+
+        devLog(`✅ PUBLIC TRUCKS API: Found ${trucks.length} available trucks`)
 
         // Format the trucks for public display
         const publicTrucks = trucks.map(truck => {
@@ -52,7 +62,7 @@ export default defineEventHandler(async (event) => {
                     ? JSON.parse(truck.specifications)
                     : truck.specifications || {}
             } catch (e) {
-                console.error('Error parsing specifications:', e)
+                devLog('Error parsing specifications:', e)
                 specifications = {
                     engineType: 'Diesel',
                     transmission: 'Automatic',
@@ -71,7 +81,7 @@ export default defineEventHandler(async (event) => {
                     ? JSON.parse(truck.images)
                     : truck.images || []
             } catch (e) {
-                console.error('Error parsing images:', e)
+                devLog('Error parsing images:', e)
                 images = ['/images/truckx-slide.webp']
             }
 
@@ -91,7 +101,7 @@ export default defineEventHandler(async (event) => {
                 capacityUnit: 'tons',
                 currentLocation: location,
                 imageUrl: images.length > 0 ? images[0] : '/images/truckx-slide.webp',
-                images: images,
+                images: Array.isArray(images) ? images.slice(0, 5) : [],
                 specifications: {
                     engineType: specifications.engineType || 'Diesel',
                     transmission: specifications.transmission || 'Automatic',
@@ -105,14 +115,22 @@ export default defineEventHandler(async (event) => {
 
         // If no trucks found, return empty array
         if (publicTrucks.length === 0) {
-            console.log('⚠️ PUBLIC TRUCKS API: No available trucks found')
+            devLog('⚠️ PUBLIC TRUCKS API: No available trucks found')
             return { trucks: [] }
         }
 
-        console.log('Returning trucks:', JSON.stringify(publicTrucks, null, 2))
-        return { trucks: publicTrucks }
+        devLog('Returning trucks:', JSON.stringify(publicTrucks, null, 2))
+        return {
+            trucks: publicTrucks,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                totalItems: total,
+                totalPages: Math.ceil(total / limitNum)
+            }
+        }
     } catch (error: any) {
-        console.error('❌ PUBLIC TRUCKS API: Error fetching trucks:', error)
+        devLog('❌ PUBLIC TRUCKS API: Error fetching trucks:', error)
         return { trucks: [] }
     }
 }) 

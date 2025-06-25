@@ -17,6 +17,10 @@ export default defineNuxtConfig({
     externals: {
       inline: [],
       external: ['@prisma/client']
+    },
+    routeRules: {
+      '/uploads/**': { ssr: true },
+      // Ensure /uploads is always handled by the server
     }
   },
   experimental: {

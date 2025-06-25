@@ -2,6 +2,8 @@ import { verifyToken, type AuthToken } from '../utils/auth'
 import { fileURLToPath } from 'url'
 import { resolve } from 'pathe'
 
+const devLog = (...args: any[]) => { if (process.env.NODE_ENV !== 'production') console.log(...args) }
+
 export default defineEventHandler(async (event) => {
     const path = event.node.req.url
     if (path === '/api/auth/forgot-password' || path === '/api/auth/reset-password') {
@@ -37,21 +39,22 @@ export default defineEventHandler(async (event) => {
             } catch { }
         }
         if (handlerModule && handlerModule.skipAuth) {
-            console.log(`[Auth Middleware] skipAuth detected for ${event.path}`)
+            devLog(`[Auth Middleware] skipAuth detected for ${event.path}`)
             return
         }
     } catch (e) {
         // Ignore errors in skipAuth check
     }
 
-    console.log(`[Auth Middleware] Processing request for path: ${event.path}`)
+    devLog(`[Auth Middleware] Processing request for path: ${event.path}`)
 
     // Skip auth check for public API routes
     const publicRoutes = [
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/verify-otp',
-        '/api/admin/create-direct'
+        '/api/admin/create-direct',
+        '/api/uploads'
     ]
 
     // Check if the path starts with any of these prefixes
@@ -60,7 +63,7 @@ export default defineEventHandler(async (event) => {
     ]
 
     if (publicPrefixes.some(prefix => event.path.startsWith(prefix))) {
-        console.log(`[Auth Middleware] Public API prefix route: ${event.path}`)
+        devLog(`[Auth Middleware] Public API prefix route: ${event.path}`)
         return
     }
 
@@ -75,7 +78,7 @@ export default defineEventHandler(async (event) => {
     ]
 
     if (isDev && adminRoutes.includes(event.path)) {
-        console.log(`[Auth Middleware] Bypassing auth check for ${event.path} in development mode`)
+        devLog(`[Auth Middleware] Bypassing auth check for ${event.path} in development mode`)
 
         // For debugging, still check if token exists but don't require it
         const authHeader = getHeader(event, 'Authorization')
@@ -84,33 +87,33 @@ export default defineEventHandler(async (event) => {
             try {
                 const decoded = verifyToken(token)
                 if (decoded) {
-                    console.log(`[Auth Middleware] Token provided and valid for ${event.path}`)
+                    devLog(`[Auth Middleware] Token provided and valid for ${event.path}`)
                     event.context.auth = {
                         userId: decoded.userId,
                         role: decoded.role
                     }
                 } else {
-                    console.log(`[Auth Middleware] Token provided but invalid for ${event.path}`)
+                    devLog(`[Auth Middleware] Token provided but invalid for ${event.path}`)
                 }
             } catch (error) {
-                console.log(`[Auth Middleware] Token validation error: ${error.message}`)
+                devLog(`[Auth Middleware] Token validation error: ${(error as any).message}`)
             }
         } else {
-            console.log(`[Auth Middleware] No token provided for ${event.path} but continuing in dev mode`)
+            devLog(`[Auth Middleware] No token provided for ${event.path} but continuing in dev mode`)
         }
 
         return
     }
 
     if (publicRoutes.includes(event.path)) {
-        console.log(`[Auth Middleware] Public route: ${event.path}`)
+        devLog(`[Auth Middleware] Public route: ${event.path}`)
         return
     }
 
     // Get the authorization header
     const authHeader = getHeader(event, 'Authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.log(`[Auth Middleware] Unauthorized: No token provided for ${event.path}`)
+        devLog(`[Auth Middleware] Unauthorized: No token provided for ${event.path}`)
         throw createError({
             statusCode: 401,
             message: 'Unauthorized: No token provided'
@@ -123,14 +126,14 @@ export default defineEventHandler(async (event) => {
         const decoded = verifyToken(token)
 
         if (!decoded) {
-            console.log(`[Auth Middleware] Unauthorized: Invalid token for ${event.path}`)
+            devLog(`[Auth Middleware] Unauthorized: Invalid token for ${event.path}`)
             throw createError({
                 statusCode: 401,
                 message: 'Unauthorized: Invalid token'
             })
         }
 
-        console.log(`[Auth Middleware] Valid token for ${event.path} - User ID: ${decoded.userId}, Role: ${decoded.role}`)
+        devLog(`[Auth Middleware] Valid token for ${event.path} - User ID: ${decoded.userId}, Role: ${decoded.role}`)
 
         // Add user info to the event context
         event.context.auth = {
@@ -138,10 +141,10 @@ export default defineEventHandler(async (event) => {
             role: decoded.role
         }
     } catch (error) {
-        console.log(`[Auth Middleware] Token verification error for ${event.path}: ${error.message}`)
+        devLog(`[Auth Middleware] Token verification error for ${event.path}: ${(error as any).message}`)
         throw createError({
             statusCode: 401,
-            message: `Unauthorized: ${error.message || 'Invalid token'}`
+            message: `Unauthorized: ${(error as any).message || 'Invalid token'}`
         })
     }
 }) 

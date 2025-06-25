@@ -102,6 +102,7 @@ export default defineEventHandler(async (event) => {
                         id: truck.orders[0].load.id,
                         title: truck.orders[0].load.title
                     } : null,
+                    images: truck.images || [],
                     orders: undefined // Remove the orders array from the response
                 }
             })
@@ -135,7 +136,16 @@ export default defineEventHandler(async (event) => {
                     }
                 }
             })
+
+            // Add images array to each truck
+            trucks = trucks.map(truck => ({
+                ...truck,
+                images: truck.images || []
+            }))
         }
+
+        // Remove dummy trucks with only /images/truckx-slide.webp as their image
+        trucks = trucks.filter(truck => !(Array.isArray(truck.images) && truck.images.length === 1 && truck.images[0] === '/images/truckx-slide.webp'))
 
         console.log(`Found ${trucks.length} trucks for query`)
         console.log('First few trucks:', trucks.slice(0, 2))

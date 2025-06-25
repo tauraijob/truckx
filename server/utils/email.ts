@@ -37,7 +37,9 @@ export async function sendVerificationEmail(email: string, otp: string) {
 }
 
 export async function sendResetEmail(email: string, otp: string) {
-  // In production, send an actual email with the OTP
-  console.log(`Send password reset OTP to ${email}: ${otp}`)
+  // Only log in development
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Send password reset OTP to ${email}: ${otp}`)
+  }
   // TODO: Integrate with real email service
 } 

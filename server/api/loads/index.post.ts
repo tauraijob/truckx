@@ -1,6 +1,8 @@
 import { processImages, createApiHandler } from '~/server/utils/api-imports'
 import type { PrismaClient } from '@prisma/client'
 
+const devLog = (...args: any[]) => { if (process.env.NODE_ENV !== 'production') console.log(...args) }
+
 export default createApiHandler(async (event, db) => {
     // Get user ID from auth context
     const userId = event.context.auth.userId
@@ -23,7 +25,7 @@ export default createApiHandler(async (event, db) => {
 
     // Get request body
     const body = await readBody(event)
-    console.log('Received load creation request:', {
+    devLog('Received load creation request:', {
         ...body,
         featuredImage: body.featuredImage ? '[BASE64_IMAGE]' : null,
         galleryImages: body.galleryImages ? `${body.galleryImages.length} images` : null
@@ -47,7 +49,7 @@ export default createApiHandler(async (event, db) => {
     // Validate required fields
     if (!title || !description || !weight || !volume || !pickupLocation ||
         !deliveryLocation || !distance || !price || !type) {
-        console.error('Missing required fields in load creation', {
+        devLog('Missing required fields in load creation', {
             title, description, weight, volume, pickupLocation,
             deliveryLocation, distance, price, type
         })
@@ -57,19 +59,24 @@ export default createApiHandler(async (event, db) => {
         })
     }
 
+    // Limit the number of images to prevent memory issues
+    const MAX_IMAGES = 10
+    let featuredImageLimited = featuredImage ? [featuredImage] : []
+    let galleryImagesLimited = Array.isArray(galleryImages) ? galleryImages.slice(0, MAX_IMAGES - featuredImageLimited.length) : []
+
     // Process images (handle both base64 and URLs)
     let processedImages: string[] = []
 
-    if (featuredImage) {
+    if (featuredImageLimited.length > 0) {
         // If we have a featured image, add it as the first image
-        console.log('Processing featured image for load')
-        processedImages = await processImages([featuredImage])
+        devLog('Processing featured image for load')
+        processedImages = await processImages(featuredImageLimited)
     }
 
-    if (galleryImages && galleryImages.length > 0) {
+    if (galleryImagesLimited.length > 0) {
         // Add gallery images after featured image
-        console.log(`Processing ${galleryImages.length} gallery images for load`)
-        const processedGalleryImages = await processImages(galleryImages)
+        devLog(`Processing ${galleryImagesLimited.length} gallery images for load`)
+        const processedGalleryImages = await processImages(galleryImagesLimited)
         processedImages = [...processedImages, ...processedGalleryImages]
     }
 
@@ -118,7 +125,7 @@ export default createApiHandler(async (event, db) => {
         images: processedImages
     }
 
-    console.log('Load created successfully:', load.id)
+    devLog('Load created successfully:', load.id)
 
     return {
         load: responseLoad,

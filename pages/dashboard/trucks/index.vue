@@ -53,6 +53,9 @@
                     <p class="text-gray-600 mb-2">Capacity: {{ truck.capacity }} tons</p>
                     <p class="text-gray-600 mb-4">License: {{ truck.licensePlate }}</p>
                     <div class="flex justify-between items-center">
+                        <button @click="openViewModal(truck)" class="text-blue-600 hover:text-blue-800 font-medium">
+                            View
+                        </button>
                         <button @click="editTruck(truck)" class="text-blue-600 hover:text-blue-800 font-medium">
                             Edit
                         </button>
@@ -140,26 +143,39 @@
                 </form>
             </div>
         </div>
+
+        <!-- View Truck Modal -->
+        <div v-if="showViewModal && selectedTruck" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg max-w-lg w-full p-6 relative">
+                <button @click="showViewModal = false" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                <h2 class="text-2xl font-bold mb-4">Truck Details</h2>
+                <div class="mb-4">
+                    <img v-if="selectedTruck.images && selectedTruck.images.length > 0" :src="selectedTruck.images[0]" alt="Truck image" class="w-full h-48 object-cover rounded mb-2" />
+                    <div v-else class="w-full h-48 bg-gray-100 flex items-center justify-center rounded mb-2 text-gray-400">No Image</div>
+                </div>
+                <div class="mb-2"><strong>Make:</strong> {{ selectedTruck.make }}</div>
+                <div class="mb-2"><strong>Model:</strong> {{ selectedTruck.model }}</div>
+                <div class="mb-2"><strong>Year:</strong> {{ selectedTruck.year }}</div>
+                <div class="mb-2"><strong>Capacity:</strong> {{ selectedTruck.capacity }} tons</div>
+                <div class="mb-2"><strong>License Plate:</strong> {{ selectedTruck.licensePlate }}</div>
+                <div class="mb-2"><strong>Status:</strong> <span :class="selectedTruck.isAvailable ? 'text-green-600' : 'text-red-600'">{{ selectedTruck.isAvailable ? 'Available' : 'Unavailable' }}</span></div>
+                <div class="mb-2"><strong>Provider:</strong> {{ selectedTruck.provider ? selectedTruck.provider.firstName + ' ' + selectedTruck.provider.lastName : 'N/A' }}</div>
+                <div class="mb-2"><strong>Provider Email:</strong> {{ selectedTruck.provider ? selectedTruck.provider.email : 'N/A' }}</div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useTruck } from '~/composables/useTruck'
 
-const {
-    trucks,
-    loading,
-    error,
-    fetchTrucks,
-    addTruck,
-    updateTruck,
-    deleteTruck,
-    uploadTruckImages,
-} = useTruck()
-
+const trucks = ref([])
+const loading = ref(false)
+const error = ref<string | null>(null)
 const showAddModal = ref(false)
+const showViewModal = ref(false)
 const editingTruck = ref<any>(null)
+const selectedTruck = ref<any>(null)
 const formData = ref({
     make: '',
     model: '',
@@ -170,15 +186,43 @@ const formData = ref({
     images: [] as File[],
 })
 
-onMounted(async () => {
-    await fetchTrucks()
-})
+const fetchTrucks = async () => {
+    loading.value = true
+    error.value = null
+    try {
+        const res = await fetch('/api/admin/trucks')
+        if (!res.ok) throw new Error('Failed to fetch trucks')
+        const data = await res.json()
+        trucks.value = (data.trucks || []).map((truck: any) => ({
+            id: truck.id,
+            make: truck.make,
+            model: truck.model,
+            year: truck.year,
+            capacity: truck.capacity,
+            licensePlate: truck.licensePlate,
+            images: truck.images || [],
+            isAvailable: truck.isAvailable !== false, // fallback true if undefined
+            provider: truck.provider,
+        }))
+    } catch (err: any) {
+        error.value = err.message || 'Failed to load trucks'
+    } finally {
+        loading.value = false
+    }
+}
+
+onMounted(fetchTrucks)
 
 const handleImageUpload = (event: Event) => {
     const input = event.target as HTMLInputElement
     if (input.files) {
         formData.value.images = Array.from(input.files)
     }
+}
+
+const openViewModal = (truck: any) => {
+    selectedTruck.value = truck
+    showViewModal.value = true
 }
 
 const editTruck = (truck: any) => {
@@ -197,16 +241,37 @@ const editTruck = (truck: any) => {
 
 const handleSubmit = async () => {
     try {
+        loading.value = true
         if (editingTruck.value) {
-            await updateTruck(editingTruck.value.id, formData.value)
-            if (formData.value.images.length > 0) {
-                await uploadTruckImages(editingTruck.value.id, formData.value.images)
-            }
+            // Edit
+            const res = await fetch(`/api/admin/trucks/${editingTruck.value.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    make: formData.value.make,
+                    model: formData.value.model,
+                    year: formData.value.year,
+                    capacity: formData.value.capacity,
+                    licensePlate: formData.value.licensePlate,
+                    isAvailable: formData.value.isAvailable,
+                })
+            })
+            if (!res.ok) throw new Error('Failed to update truck')
         } else {
-            const newTruck = await addTruck(formData.value)
-            if (formData.value.images.length > 0) {
-                await uploadTruckImages(newTruck.id, formData.value.images)
-            }
+            // Add
+            const res = await fetch('/api/admin/trucks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    make: formData.value.make,
+                    model: formData.value.model,
+                    year: formData.value.year,
+                    capacity: formData.value.capacity,
+                    licensePlate: formData.value.licensePlate,
+                    isAvailable: formData.value.isAvailable,
+                })
+            })
+            if (!res.ok) throw new Error('Failed to add truck')
         }
         showAddModal.value = false
         editingTruck.value = null
@@ -219,18 +284,25 @@ const handleSubmit = async () => {
             isAvailable: true,
             images: [],
         }
+        await fetchTrucks()
     } catch (err) {
-        console.error('Error saving truck:', err)
+        error.value = (err as any).message || 'Failed to save truck'
+    } finally {
+        loading.value = false
     }
 }
 
 const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this truck?')) {
         try {
-            await deleteTruck(id)
+            loading.value = true
+            const res = await fetch(`/api/admin/trucks/${id}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error('Failed to delete truck')
             await fetchTrucks()
         } catch (err) {
-            console.error('Error deleting truck:', err)
+            error.value = (err as any).message || 'Failed to delete truck'
+        } finally {
+            loading.value = false
         }
     }
 }

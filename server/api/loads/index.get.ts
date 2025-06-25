@@ -1,5 +1,8 @@
 import { OrderStatus, createApiHandler } from '~/server/utils/api-imports'
 import type { PrismaClient } from '@prisma/client'
+import { getQuery } from 'h3'
+
+const devLog = (...args: any[]) => { if (process.env.NODE_ENV !== 'production') console.log(...args) }
 
 export default createApiHandler(async (event, db) => {
     try {
@@ -7,13 +10,19 @@ export default createApiHandler(async (event, db) => {
         const userId = event.context.auth?.userId
         const userRole = event.context.auth?.role
 
-        console.log('Auth context:', { userId, userRole })
+        devLog('Auth context:', { userId, userRole })
 
         // Get query parameters
         const query = getQuery(event)
         const { providerId, isAvailable } = query
 
-        console.log('Query parameters:', { providerId, isAvailable })
+        devLog('Query parameters:', { providerId, isAvailable })
+
+        // Add pagination
+        const { page = 1, limit = 20 } = getQuery(event)
+        const pageNum = parseInt(page as string)
+        const limitNum = parseInt(limit as string)
+        const skip = (pageNum - 1) * limitNum
 
         // Build filter conditions
         const where: any = {}
@@ -36,33 +45,34 @@ export default createApiHandler(async (event, db) => {
         }
 
         // Log for debugging
-        console.log('User role:', userRole)
-        console.log('Fetching loads with filter:', JSON.stringify(where, null, 2))
+        devLog('User role:', userRole)
+        devLog('Fetching loads with filter:', JSON.stringify(where, null, 2))
 
         let loads;
+        let total;
         try {
             // First, let's verify the database connection
             try {
                 await db.$queryRaw`SELECT 1`
-                console.log('Database connection verified')
+                devLog('Database connection verified')
             } catch (dbError) {
-                console.error('Database connection error:', dbError)
+                devLog('Database connection error:', dbError)
                 throw new Error('Database connection failed')
             }
 
             // Let's also check if we can query the loads table directly
             try {
                 const count = await db.load.count()
-                console.log('Total loads in database:', count)
+                devLog('Total loads in database:', count)
             } catch (countError) {
-                console.error('Error counting loads:', countError)
+                devLog('Error counting loads:', countError)
                 throw new Error('Error accessing loads table')
             }
 
             if ((providerId === 'current' || where.providerId === userId) && userRole === 'LOAD_PROVIDER') {
-                console.log('Fetching loads for load provider')
+                devLog('Fetching loads for load provider')
                 // For load providers viewing their own loads, show all loads
-                console.log('Load provider viewing their own loads - showing all including active orders')
+                devLog('Load provider viewing their own loads - showing all including active orders')
 
                 loads = await db.load.findMany({
                     where,
@@ -104,15 +114,17 @@ export default createApiHandler(async (event, db) => {
                         orders: undefined
                     }
                 })
+
+                total = loads.length;
             } else {
-                console.log('Fetching available loads for truck provider')
+                devLog('Fetching available loads for truck provider')
                 try {
                     // First try a simple query without the complex conditions
                     const simpleLoads = await db.load.findMany({
                         take: 1,
                         select: { id: true }
                     })
-                    console.log('Simple query test successful:', simpleLoads)
+                    devLog('Simple query test successful:', simpleLoads)
 
                     // Now try the full query
                     loads = await db.load.findMany({
@@ -141,11 +153,29 @@ export default createApiHandler(async (event, db) => {
                         },
                         orderBy: {
                             createdAt: 'desc'
+                        },
+                        skip,
+                        take: limitNum
+                    })
+                    devLog('Successfully fetched loads:', loads.length)
+
+                    // Get total count for pagination
+                    total = await db.load.count({
+                        where: {
+                            ...where,
+                            NOT: {
+                                orders: {
+                                    some: {
+                                        status: {
+                                            in: [OrderStatus.PENDING, OrderStatus.ACCEPTED, OrderStatus.IN_TRANSIT]
+                                        }
+                                    }
+                                }
+                            }
                         }
                     })
-                    console.log('Successfully fetched loads:', loads.length)
                 } catch (queryError) {
-                    console.error('Detailed query error:', {
+                    devLog('Detailed query error:', {
                         error: queryError,
                         message: queryError.message,
                         code: queryError.code,
@@ -164,7 +194,7 @@ export default createApiHandler(async (event, db) => {
                         try {
                             specifications = JSON.parse(load.specifications)
                         } catch (e) {
-                            console.warn(`Failed to parse specifications for load ${load.id}:`, e)
+                            devLog(`Failed to parse specifications for load ${load.id}:`, e)
                             specifications = {}
                         }
                     }
@@ -172,10 +202,10 @@ export default createApiHandler(async (event, db) => {
                     // Safely get images
                     let images = []
                     if (load.images && Array.isArray(load.images)) {
-                        images = load.images
+                        images = load.images.slice(0, 5)
                     } else if (specifications && typeof specifications === 'object' &&
                         '_images' in specifications && Array.isArray(specifications._images)) {
-                        images = specifications._images
+                        images = specifications._images.slice(0, 5)
                     }
 
                     // Check for an active order
@@ -186,10 +216,10 @@ export default createApiHandler(async (event, db) => {
                         specifications: specifications || {},
                         orders: undefined,
                         activeOrderStatus: activeOrder ? activeOrder.status : null,
-                        images: images
+                        images
                     }
                 } catch (e) {
-                    console.error(`Error processing load ${load.id}:`, e)
+                    devLog(`Error processing load ${load.id}:`, e)
                     // Return a sanitized version of the load with minimal data
                     return {
                         id: load.id,
@@ -211,10 +241,16 @@ export default createApiHandler(async (event, db) => {
 
             return {
                 loads: processedLoads,
-                total: processedLoads.length
+                total: processedLoads.length,
+                pagination: {
+                    page: pageNum,
+                    limit: limitNum,
+                    totalItems: total,
+                    totalPages: Math.ceil(total / limitNum)
+                }
             }
         } catch (error) {
-            console.error('Database operation error:', {
+            devLog('Database operation error:', {
                 error,
                 message: error.message,
                 code: error.code,
@@ -227,7 +263,7 @@ export default createApiHandler(async (event, db) => {
             })
         }
     } catch (error) {
-        console.error('Top-level error in loads endpoint:', {
+        devLog('Top-level error in loads endpoint:', {
             error,
             message: error.message,
             stack: error.stack

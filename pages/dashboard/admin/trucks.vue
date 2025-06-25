@@ -114,11 +114,11 @@
             </td>
             <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
               <div class="flex space-x-2">
-                <button class="rounded bg-white p-1 text-gray-400 hover:text-blue-600">
-                  <EyeIcon class="h-5 w-5" />
+                <button class="rounded bg-white p-1 text-gray-400 hover:text-blue-600" @click="openViewModal(truck)">
+                  <EyeIcon class="h-5 w-5 cursor-pointer" />
                 </button>
-                <button class="rounded bg-white p-1 text-gray-400 hover:text-green-600">
-                  <PencilIcon class="h-5 w-5" />
+                <button class="rounded bg-white p-1 text-gray-400 hover:text-green-600" @click="editTruck(truck)">
+                  <PencilIcon class="h-5 w-5 cursor-pointer" />
                 </button>
               </div>
             </td>
@@ -155,6 +155,132 @@
         </button>
       </div>
     </div>
+
+    <!-- View Modal -->
+    <template v-if="showViewModal && selectedTruck">
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg max-w-2xl w-full p-6 relative overflow-y-auto max-h-[90vh]">
+          <button @click="closeModals" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+          <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+            <TruckIcon class="h-7 w-7 text-blue-600" /> Truck Details
+          </h2>
+          <div class="mb-4">
+            <TruckImageGallery :images="selectedTruck.images" alt="Truck images" />
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <div class="mb-2"><span class="font-semibold">Make:</span> {{ selectedTruck.make }}</div>
+              <div class="mb-2"><span class="font-semibold">Model:</span> {{ selectedTruck.model }}</div>
+              <div class="mb-2"><span class="font-semibold">Year:</span> {{ selectedTruck.year }}</div>
+              <div class="mb-2"><span class="font-semibold">Capacity:</span> {{ selectedTruck.capacityTons }} tons</div>
+              <div class="mb-2"><span class="font-semibold">License Plate:</span> {{ selectedTruck.registrationNumber }}</div>
+              <div class="mb-2"><span class="font-semibold">Status:</span> <span :class="getStatusBadgeClass(selectedTruck.status) + ' px-2 py-1 rounded text-xs'">{{ formatTruckStatus(selectedTruck.status) }}</span></div>
+            </div>
+            <div>
+              <div class="mb-2 flex items-center"><MapPinIcon class="h-5 w-5 text-gray-400 mr-1" /> <span class="font-semibold">Location:</span> {{ selectedTruck.currentLocation }}</div>
+              <div class="mb-2"><span class="font-semibold">Type:</span> {{ formatTruckType(selectedTruck.type) }}</div>
+              <div class="mb-2"><span class="font-semibold">Provider:</span> {{ selectedTruck.providerName }}</div>
+              <div class="mb-2"><span class="font-semibold">Provider Email:</span> {{ selectedTruck.providerEmail }}</div>
+              <div class="mb-2"><span class="font-semibold">Created:</span> {{ new Date(selectedTruck.createdAt).toLocaleString() }}</div>
+            </div>
+          </div>
+          <div class="mb-4">
+            <h3 class="font-semibold mb-1">Specifications</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              <div v-if="selectedTruck.specifications?.type">
+                <span class="font-semibold">Type:</span> {{ formatTruckType(selectedTruck.specifications.type) }}
+              </div>
+              <div v-if="selectedTruck.specifications?.currentLocation">
+                <span class="font-semibold">Location:</span> {{ selectedTruck.specifications.currentLocation }}
+              </div>
+              <div v-if="selectedTruck.specifications?.availability">
+                <span class="font-semibold">Availability:</span> {{ formatTruckStatus(selectedTruck.specifications.availability) }}
+              </div>
+              <div v-if="selectedTruck.specifications?.description">
+                <span class="font-semibold">Description:</span> {{ selectedTruck.specifications.description || '—' }}
+              </div>
+            </div>
+          </div>
+          <div v-if="selectedTruck.hasActiveOrder" class="mb-2">
+            <span class="font-semibold">Active Order:</span> <span :class="getOrderStatusClass(selectedTruck.activeOrderStatus) + ' px-2 py-1 rounded text-xs'">{{ formatOrderStatus(selectedTruck.activeOrderStatus) }}</span>
+            <span v-if="selectedTruck.activeLoadInfo"> - {{ selectedTruck.activeLoadInfo.title }}</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Edit Modal -->
+    <template v-if="showEditModal && selectedTruck">
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg max-w-2xl w-full p-6 relative overflow-y-auto max-h-[90vh]">
+          <button @click="closeModals" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+          <h2 class="text-2xl font-bold mb-4">Edit Truck</h2>
+          <form @submit.prevent="saveTruckEdit">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium">Make</label>
+                <input v-model="editForm.make" class="w-full border rounded px-2 py-1" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Model</label>
+                <input v-model="editForm.model" class="w-full border rounded px-2 py-1" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Year</label>
+                <input v-model.number="editForm.year" type="number" class="w-full border rounded px-2 py-1" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Capacity (tons)</label>
+                <input v-model.number="editForm.capacity" type="number" class="w-full border rounded px-2 py-1" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium">License Plate</label>
+                <input v-model="editForm.licensePlate" class="w-full border rounded px-2 py-1" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Type</label>
+                <select v-model="editForm.type" class="w-full border rounded px-2 py-1">
+                  <option value="FLATBED">Flatbed</option>
+                  <option value="REFRIGERATED">Refrigerated</option>
+                  <option value="DRY_VAN">Dry Van</option>
+                  <option value="STEP_DECK">Step Deck</option>
+                  <option value="TANKER">Tanker</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Current Location</label>
+                <input v-model="editForm.currentLocation" class="w-full border rounded px-2 py-1" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium">Availability</label>
+                <select v-model="editForm.availability" class="w-full border rounded px-2 py-1">
+                  <option value="AVAILABLE">Available</option>
+                  <option value="BUSY">Busy</option>
+                  <option value="MAINTENANCE">Maintenance</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium mb-1">Description</label>
+              <textarea v-model="editForm.description" class="w-full border rounded px-2 py-1" rows="2"></textarea>
+            </div>
+            <div class="mt-6">
+              <label class="block text-sm font-medium mb-2">Truck Images</label>
+              <TruckImageGallery :images="editForm.images" alt="Truck images" />
+              <div class="flex flex-wrap gap-2 mt-2">
+                <button v-for="(img, idx) in editForm.images" :key="idx" type="button" @click="removeImage(idx)" class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded">Remove</button>
+              </div>
+              <input type="file" multiple accept="image/*" @change="onImageChange" class="mt-2" />
+            </div>
+            <div class="flex justify-end mt-6">
+              <button type="button" @click="closeModals" class="mr-2 px-4 py-2 bg-gray-200 rounded">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded" :disabled="savingEdit">{{ savingEdit ? 'Saving...' : 'Save' }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -168,6 +294,7 @@ import {
   PencilIcon,
   ArrowPathIcon
 } from '@heroicons/vue/24/outline'
+import TruckImageGallery from '~/components/TruckImageGallery.vue'
 
 definePageMeta({
   layout: 'admin-dashboard',
@@ -195,6 +322,8 @@ interface Truck {
     id: string;
     title: string;
   } | null;
+  specifications: any;
+  images: string[];
 }
 
 // Pagination settings
@@ -324,13 +453,15 @@ async function fetchTrucks() {
           createdAt: truck.createdAt,
           hasActiveOrder: truck.hasActiveOrder,
           activeOrderStatus: truck.activeOrderStatus,
-          activeLoadInfo: truck.activeLoadInfo
+          activeLoadInfo: truck.activeLoadInfo,
+          specifications: truck.specifications || {},
+          images: Array.isArray(truck.images) ? [...truck.images] : [],
         };
       });
       
       // Update pagination from API response
       if (data.value.pagination) {
-        totalCount.value = data.value.pagination.total || 0
+        totalCount.value = data.value.pagination.totalItems || 0
         totalPages.value = data.value.pagination.totalPages || 1
         currentPage.value = Math.min(currentPage.value, totalPages.value)
       }
@@ -452,6 +583,119 @@ function formatOrderStatus(status: string): string {
       return 'Rejected'
     default:
       return status
+  }
+}
+
+const showViewModal = ref(false)
+const showEditModal = ref(false)
+const selectedTruck = ref<Truck | null>(null)
+const savingEdit = ref(false)
+const editForm = ref({
+  id: '',
+  make: '',
+  model: '',
+  year: new Date().getFullYear(),
+  capacity: 0,
+  licensePlate: '',
+  type: '',
+  currentLocation: '',
+  availability: 'AVAILABLE',
+  description: '',
+  isAvailable: true,
+  images: [] as string[],
+})
+
+function openViewModal(truck: Truck) {
+  selectedTruck.value = truck
+  showViewModal.value = true
+}
+
+function editTruck(truck: Truck) {
+  selectedTruck.value = truck
+  showEditModal.value = true
+  // Populate editForm with truck data
+  const specs = truck.specifications || {}
+  editForm.value = {
+    id: truck.id,
+    make: truck.make,
+    model: truck.model,
+    year: truck.year,
+    capacity: truck.capacityTons,
+    licensePlate: truck.registrationNumber,
+    type: specs.type || truck.type || '',
+    currentLocation: specs.currentLocation || truck.currentLocation || '',
+    availability: specs.availability || 'AVAILABLE',
+    description: specs.description || '',
+    isAvailable: truck.status === 'AVAILABLE',
+    images: Array.isArray(truck.images) ? [...truck.images] : [],
+  }
+}
+
+function closeModals() {
+  showViewModal.value = false
+  showEditModal.value = false
+  selectedTruck.value = null
+}
+
+function removeImage(idx: number) {
+  editForm.value.images.splice(idx, 1)
+}
+
+function onImageChange(e: Event) {
+  const files = (e.target as HTMLInputElement).files
+  if (!files) return
+  Array.from(files).forEach(file => {
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        editForm.value.images.push(ev.target.result as string)
+      }
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+async function saveTruckEdit() {
+  savingEdit.value = true
+  try {
+    // Build specifications from fields
+    const specs = {
+      type: editForm.value.type,
+      currentLocation: editForm.value.currentLocation,
+      availability: editForm.value.availability,
+      description: editForm.value.description
+    }
+    // Images: first is featured, rest are gallery
+    const images = editForm.value.images || []
+    const featuredImage = images.length > 0 ? images[0] : null
+    const galleryImages = images.length > 1 ? images.slice(1) : []
+    const payload = {
+      make: editForm.value.make,
+      model: editForm.value.model,
+      year: editForm.value.year,
+      capacity: editForm.value.capacity,
+      licensePlate: editForm.value.licensePlate,
+      isAvailable: editForm.value.isAvailable,
+      specifications: specs,
+      featuredImage,
+      galleryImages,
+      keepExistingImages: false
+    }
+    const res = await fetch(`/api/trucks/${editForm.value.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(payload)
+    })
+    if (!res.ok) throw new Error('Failed to update truck')
+    await fetchTrucks()
+    closeModals()
+  } catch (e) {
+    alert('Error saving truck: ' + (e as any).message)
+  } finally {
+    savingEdit.value = false
   }
 }
 </script> 

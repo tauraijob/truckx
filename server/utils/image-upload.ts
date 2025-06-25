@@ -4,13 +4,13 @@ import path from 'path'
 import fs from 'fs'
 import { nanoid } from 'nanoid'
 
-// Configure storage to use /uploads (not public/uploads)
+// Configure storage to use /public/images (not uploads)
 const storage = createStorage({
-    driver: fsDriver({ base: './uploads' })
+    driver: fsDriver({ base: './public/images' })
 })
 
-// Ensure the upload directory exists (in /uploads)
-const uploadDir = path.join(process.cwd(), 'uploads')
+// Ensure the upload directory exists (in /public/images)
+const uploadDir = path.join(process.cwd(), 'public', 'images')
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true })
 }
@@ -32,32 +32,32 @@ export async function processImages(images: string[]): Promise<string[]> {
         return []
     }
 
-    // Process each image and collect the paths
-    const imagePaths: string[] = []
-
-    for (const image of images) {
+    // Process each image in parallel and collect the paths
+    const imagePromises = images.map(async (image) => {
         try {
             // Skip empty strings or null values
-            if (!image) continue
+            if (!image) return null
 
             // If image is already a URL (e.g., from a previous upload), use it as is
             if (image.startsWith('http') || image.startsWith('/uploads') || image.startsWith('/images')) {
-                imagePaths.push(image)
-                continue
+                return image
             }
 
             // If it's a base64 image, save it to the filesystem
             if (image.startsWith('data:image')) {
                 const savedPath = await saveBase64Image(image)
                 if (savedPath) {
-                    imagePaths.push(savedPath)
+                    return savedPath
                 }
             }
         } catch (error) {
             console.error('Error processing image:', error)
             // Continue with other images even if one fails
         }
-    }
+        return null
+    })
+
+    let imagePaths = (await Promise.all(imagePromises)).filter(Boolean) as string[]
 
     // If we couldn't process any images, use a default
     if (imagePaths.length === 0) {
@@ -84,11 +84,11 @@ async function saveBase64Image(base64String: string): Promise<string> {
 
         // Generate a unique filename
         const filename = `${nanoid()}.${format}`
-        const filePath = `/uploads/${filename}`
+        const filePath = `/images/${filename}`
         const fullPath = path.join(uploadDir, filename)
 
-        // Write the file to disk
-        fs.writeFileSync(fullPath, Buffer.from(data, 'base64'))
+        // Write the file to disk asynchronously
+        await fs.promises.writeFile(fullPath, Buffer.from(data, 'base64'))
 
         return filePath
     } catch (error) {
@@ -112,19 +112,18 @@ export async function processImage(image: string): Promise<string> {
  * @returns Array of URLs for the saved images
  */
 export async function saveMultipleBase64Images(base64DataArray: string[]): Promise<UploadedImage[]> {
-    const results: UploadedImage[] = []
-
-    for (const base64Data of base64DataArray) {
+    // Process all images in parallel
+    const results = await Promise.all(base64DataArray.map(async (base64Data) => {
         try {
-            const result = await saveBase64Image(base64Data)
-            results.push(result)
+            const url = await saveBase64Image(base64Data)
+            return url ? { url, filename: url.split('/').pop() || '', size: Buffer.byteLength(base64Data, 'base64'), type: 'image' } : null
         } catch (error) {
             console.error('Error saving one of the images:', error)
-            // Continue with the rest of the images
+            return null
         }
-    }
-
-    return results
+    }))
+    // Filter out any nulls
+    return results.filter(Boolean) as UploadedImage[]
 }
 
 /**

@@ -790,31 +790,49 @@ async function fetchLoads() {
 }
 
 // Handle image updates
-const handleFeaturedImageUpdate = (file: File | null) => {
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      featuredImage.value = e.target?.result as string
+const handleFeaturedImageUpdate = async (file: File | string | null) => {
+  featuredImage.value = null
+  if (file instanceof File) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await fetch('/api/uploads', {
+        method: 'POST',
+        body: formData
+      })
+      if (!response.ok) throw new Error('Failed to upload image')
+      const data = await response.json()
+      featuredImage.value = data.url // Store the uploaded image URL
+    } catch (e) {
+      imageErrors.value.featuredImage = 'Failed to upload image.'
     }
-    reader.readAsDataURL(file)
-  } else {
-    featuredImage.value = null
+  } else if (typeof file === 'string') {
+    featuredImage.value = file // In case editing and already a URL
   }
 }
 
-const handleGalleryImagesUpdate = (files: File[]) => {
+const handleGalleryImagesUpdate = async (files: (File | string)[]) => {
   galleryImages.value = []
-  
   if (files && files.length > 0) {
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          galleryImages.value.push(e.target.result as string)
+    for (const file of files) {
+      if (file instanceof File) {
+        try {
+          const formData = new FormData()
+          formData.append('file', file)
+          const response = await fetch('/api/uploads', {
+            method: 'POST',
+            body: formData
+          })
+          if (!response.ok) throw new Error('Failed to upload image')
+          const data = await response.json()
+          galleryImages.value.push(data.url)
+        } catch (e) {
+          imageErrors.value.galleryImages = 'Failed to upload one or more images.'
         }
+      } else if (typeof file === 'string') {
+        galleryImages.value.push(file) // In case editing and already a URL
       }
-      reader.readAsDataURL(file)
-    })
+    }
   }
 }
 

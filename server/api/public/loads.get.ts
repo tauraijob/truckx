@@ -1,5 +1,6 @@
 import { prisma } from '#imports'
 import { OrderStatus } from '~/server/utils/enums'
+import { getQuery } from 'h3'
 
 // Fallback enum in case the import fails
 const FALLBACK_ORDER_STATUS = {
@@ -12,18 +13,19 @@ const FALLBACK_ORDER_STATUS = {
     REJECTED: 'REJECTED'
 }
 
+const devLog = (...args: any[]) => { if (process.env.NODE_ENV !== 'production') console.log(...args) }
+
 export default defineEventHandler(async (event) => {
     try {
-        console.log('🌎 PUBLIC LOADS API: Fetching loads for public view')
+        devLog('🌎 PUBLIC LOADS API: Fetching loads for public view')
 
-        // Get query parameters
-        const query = getQuery(event)
-        const { limit = '3' } = query
-
-        // Parse limit to number
+        // Add pagination
+        const { page = 1, limit = 20 } = getQuery(event)
+        const pageNum = parseInt(page as string)
         const limitNum = parseInt(limit as string)
+        const skip = (pageNum - 1) * limitNum
 
-        console.log(`🔍 PUBLIC LOADS API: Fetching up to ${limitNum} loads`)
+        devLog(`🔍 PUBLIC LOADS API: Fetching up to ${limitNum} loads`)
 
         // Use the imported enum or fallback to our local definition if it fails
         const STATUS = OrderStatus || FALLBACK_ORDER_STATUS
@@ -44,6 +46,7 @@ export default defineEventHandler(async (event) => {
                 }
             },
             take: limitNum,
+            skip,
             orderBy: {
                 createdAt: 'desc'
             },
@@ -70,7 +73,23 @@ export default defineEventHandler(async (event) => {
             }
         })
 
-        console.log(`✅ PUBLIC LOADS API: Found ${loads.length} available loads`)
+        // Get total count for pagination
+        const total = await prisma.load.count({
+            where: {
+                isAvailable: true,
+                NOT: {
+                    orders: {
+                        some: {
+                            status: {
+                                in: [STATUS.PENDING, STATUS.ACCEPTED, STATUS.IN_TRANSIT]
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        devLog(`✅ PUBLIC LOADS API: Found ${loads.length} available loads`)
 
         // Format the loads for public display
         const publicLoads = loads.map(load => {
@@ -81,7 +100,7 @@ export default defineEventHandler(async (event) => {
                     ? JSON.parse(load.specifications)
                     : load.specifications || {}
             } catch (e) {
-                console.error('Error parsing specifications:', e)
+                devLog('Error parsing specifications:', e)
                 specifications = {
                     requiresRefrigeration: false,
                     fragile: false,
@@ -109,7 +128,7 @@ export default defineEventHandler(async (event) => {
                     images = ['/images/load-placeholder.webp']
                 }
             } catch (e) {
-                console.error('Error parsing images:', e)
+                devLog('Error parsing images:', e)
                 images = ['/images/load-placeholder.webp']
             }
 
@@ -118,7 +137,7 @@ export default defineEventHandler(async (event) => {
             const deliveryDate = specifications.deliveryDate || new Date(Date.now() + 86400000 * 7).toISOString()
 
             // Log the images for debugging
-            console.log(`Load ${load.id} images:`, images)
+            devLog(`Load ${load.id} images:`, images)
 
             return {
                 id: load.id,
@@ -136,7 +155,7 @@ export default defineEventHandler(async (event) => {
                 type: load.type || 'Standard',
                 pickupDate,
                 deliveryDate,
-                images: images, // Return the full images array
+                images: Array.isArray(images) ? images.slice(0, 5) : [], // Limit to 5 images
                 specifications: {
                     requiresRefrigeration: specifications.requiresRefrigeration || false,
                     fragile: specifications.fragile || false,
@@ -148,14 +167,22 @@ export default defineEventHandler(async (event) => {
 
         // If no loads found, return empty array
         if (publicLoads.length === 0) {
-            console.log('⚠️ PUBLIC LOADS API: No available loads found')
+            devLog('⚠️ PUBLIC LOADS API: No available loads found')
             return { loads: [] }
         }
 
-        console.log('Returning loads:', JSON.stringify(publicLoads, null, 2))
-        return { loads: publicLoads }
+        devLog('Returning loads:', JSON.stringify(publicLoads, null, 2))
+        return {
+            loads: publicLoads,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                totalItems: total,
+                totalPages: Math.ceil(total / limitNum)
+            }
+        }
     } catch (error: any) {
-        console.error('❌ PUBLIC LOADS API: Error fetching loads:', error)
+        devLog('❌ PUBLIC LOADS API: Error fetching loads:', error)
         return { loads: [] }
     }
 }) 

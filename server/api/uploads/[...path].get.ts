@@ -1,12 +1,13 @@
 import { createReadStream, existsSync } from 'fs'
 import { stat } from 'fs/promises'
 import path from 'path'
+// @ts-ignore
 import { lookup } from 'mime-types'
 
 export default defineEventHandler(async (event) => {
   try {
     const filePath = getRouterParam(event, 'path')
-    
+
     if (!filePath) {
       throw createError({
         statusCode: 400,
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
 
     // Get file stats
     const fileStats = await stat(fullPath)
-    
+
     if (!fileStats.isFile()) {
       throw createError({
         statusCode: 404,
@@ -46,21 +47,21 @@ export default defineEventHandler(async (event) => {
 
     // Determine content type
     const mimeType = lookup(fullPath) || 'application/octet-stream'
-    
+
     // Set headers
     setHeader(event, 'Content-Type', mimeType)
-    setHeader(event, 'Content-Length', fileStats.size.toString())
+    setHeader(event, 'Content-Length', Number(fileStats.size))
     setHeader(event, 'Cache-Control', 'public, max-age=31536000') // Cache for 1 year
-    
+
     // Return file stream
     return sendStream(event, createReadStream(fullPath))
   } catch (error) {
     console.error('Error serving file:', error)
-    
-    if (error.statusCode) {
+
+    if (typeof error === 'object' && error && 'statusCode' in error) {
       throw error
     }
-    
+
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to serve file'

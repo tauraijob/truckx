@@ -1,11 +1,11 @@
 <template>
   <div class="truck-image-gallery">
     <!-- Main image display -->
-    <div class="relative h-64 md:h-80 lg:h-96 w-full mb-2 rounded-lg overflow-hidden bg-gray-100">
+    <div class="relative h-48 md:h-64 lg:h-80 xl:h-96 w-full mb-2 rounded-lg overflow-hidden bg-gray-100">
       <img v-if="images && images.length > 0" 
         :src="images[currentImageIndex]" 
         :alt="alt || 'Truck image'" 
-        class="w-full h-full object-cover" />
+        class="w-full h-full object-cover max-w-full max-h-[60vw]" />
       
       <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

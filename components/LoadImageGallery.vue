@@ -1,12 +1,12 @@
 <template>
   <div class="load-image-gallery">
     <!-- Main image display -->
-    <div class="relative overflow-hidden rounded-lg h-64 bg-gray-100">
+    <div class="relative overflow-hidden rounded-lg h-48 md:h-64 lg:h-80 xl:h-96 bg-gray-100">
       <img 
         v-if="displayedImage" 
         :src="displayedImage" 
         :alt="alt" 
-        class="w-full h-full object-cover"
+        class="w-full h-full object-cover max-w-full max-h-[60vw]"
       />
       
       <div v-else class="w-full h-full flex items-center justify-center">

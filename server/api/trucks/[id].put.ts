@@ -36,8 +36,8 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // Check if user is the owner of the truck or an admin
-        if (truck.providerId !== userId && userRole !== 'ADMIN') {
+        // Check if user is the owner of the truck or an admin or super admin
+        if (truck.providerId !== userId && userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
             throw createError({
                 statusCode: 403,
                 message: 'You do not have permission to update this truck'
@@ -137,8 +137,6 @@ export default defineEventHandler(async (event) => {
                 images: processedImages,
                 specifications: specifications || truck.specifications,
                 isAvailable: isAvailable !== undefined ? isAvailable : truck.isAvailable,
-                currentLocation: currentLocation !== undefined ? currentLocation : truck.currentLocation,
-                type: type || truck.type,
                 name: name || truck.name
             }
         })

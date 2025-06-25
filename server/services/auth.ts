@@ -6,8 +6,10 @@ import bcrypt from 'bcryptjs'
  */
 export const getJwtSecret = (): string => {
     const secret = process.env.JWT_SECRET
-    if (!secret) {
+    if (process.env.NODE_ENV !== 'production') {
         console.warn('WARNING: Using default JWT secret, not safe for production!')
+    }
+    if (!secret) {
         return 'default-secret-for-development-only'
     }
     return secret

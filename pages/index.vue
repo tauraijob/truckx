@@ -55,7 +55,7 @@
           </p>
         </div>
         <div class="mt-12">
-          <div v-if="isLoadingTrucks" class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div v-if="isLoadingTrucks" class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             <div v-for="i in 3" :key="i" class="bg-white overflow-hidden shadow-lg rounded-xl transition-all">
               <div class="animate-pulse">
                 <div class="relative h-52 bg-gray-200"></div>
@@ -90,7 +90,7 @@
             <p class="text-gray-500">No available trucks found at the moment.</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div v-else class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             <div v-for="truck in trucks" :key="truck.id" class="bg-white overflow-hidden shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
               <div class="relative h-52">
                 <img :src="truck.imageUrl" :alt="truck.name" class="w-full h-full object-cover" />
@@ -153,7 +153,7 @@
           </p>
         </div>
         <div class="mt-12">
-          <div v-if="isLoadingLoads" class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div v-if="isLoadingLoads" class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             <div v-for="i in 3" :key="i" class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 transition-all p-6">
               <div class="animate-pulse">
                 <div class="flex justify-between">
@@ -197,7 +197,7 @@
             <p class="text-gray-500">No available loads found at the moment.</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div v-else class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             <div v-for="load in loads" :key="load.id" class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
               <div class="relative h-52">
                 <img :src="(load.images && load.images.length > 0) ? load.images[0] : '/images/load-placeholder.webp'" :alt="load.name" class="w-full h-full object-cover" />
@@ -367,36 +367,18 @@
     </section>
 
     <!-- Truck Detail Modal -->
-    <Modal v-model="showTruckModal" title="Truck Details" :show-primary-button="false" secondary-button-text="Close">
+    <Modal v-model="showTruckModal" title="Truck Details" :show-primary-button="false" secondary-button-text="Close" 
+      class="w-full max-w-lg md:max-w-2xl p-2 md:p-6" 
+      content-class="max-h-[90vh] overflow-y-auto">
       <TruckDetailModal :truck="selectedTruck" />
     </Modal>
     
     <!-- Load Detail Modal -->
-    <Modal v-model="showLoadModal" title="Load Details" :show-primary-button="false" secondary-button-text="Close">
+    <Modal v-model="showLoadModal" title="Load Details" :show-primary-button="false" secondary-button-text="Close" 
+      class="w-full max-w-lg md:max-w-2xl p-2 md:p-6" 
+      content-class="max-h-[90vh] overflow-y-auto">
       <LoadDetailModal :load="selectedLoad" />
     </Modal>
-
-    <!-- Quick Links -->
-    <div>
-      <h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase">Quick Links</h3>
-      <ul class="mt-4 space-y-4">
-        <li>
-          <NuxtLink to="/auth/login" class="text-base text-gray-300 hover:text-white">
-            Login
-          </NuxtLink>
-        </li>
-        <li>
-          <NuxtLink to="/auth/register" class="text-base text-gray-300 hover:text-white">
-            Register
-          </NuxtLink>
-        </li>
-        <li>
-          <NuxtLink to="/dashboard" class="text-base text-gray-300 hover:text-white">
-            Dashboard
-          </NuxtLink>
-        </li>
-      </ul>
-    </div>
   </div>
 </template>
 

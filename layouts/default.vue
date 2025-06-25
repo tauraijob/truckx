@@ -92,36 +92,15 @@
 
     <!-- Footer -->
     <footer class="bg-navy-800">
-      <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <h3 class="text-white text-lg font-semibold mb-4">About TruckX</h3>
-            <p class="text-gray-300">
-              TruckX is a marketplace connecting truck providers with load providers, making logistics management simple
-              and efficient.
-            </p>
-          </div>
-          <div>
-            <h3 class="text-white text-lg font-semibold mb-4">Quick Links</h3>
-            <ul class="space-y-2">
-              <li>
-                <NuxtLink to="/auth/login" class="text-gray-300 hover:text-primary-400">Sign In</NuxtLink>
-              </li>
-              <li>
-                <NuxtLink to="/auth/register" class="text-gray-300 hover:text-primary-400">Register</NuxtLink>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 class="text-white text-lg font-semibold mb-4">Contact Us</h3>
-            <ul class="space-y-2 text-gray-300">
-              <li>Email: info@truckx.com</li>
-              <li>Phone: +1 (555) 123-4567</li>
-              <li>Address: 123 Logistics Ave, Transport City, TC 12345</li>
-            </ul>
-          </div>
+      <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
+        <div class="w-full flex flex-col items-center justify-center">
+          <h3 class="text-white text-lg font-semibold mb-4">Contact Us</h3>
+          <ul class="space-y-2 text-gray-300 text-center">
+            <li>Email: admin@mucholinktrucking.com</li>
+            <li>Phone: +263785653669</li>
+          </ul>
         </div>
-        <div class="mt-8 border-t border-navy-700 pt-8">
+        <div class="mt-8 border-t border-navy-700 pt-8 w-full">
           <p class="text-center text-gray-300">
             &copy; {{ new Date().getFullYear() }} TruckX. All rights reserved.
           </p>

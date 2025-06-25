@@ -79,14 +79,9 @@ export default defineEventHandler(async (event) => {
                         provider: {
                             select: {
                                 id: true,
-                                name: true,
-                                userId: true,
-                                user: {
-                                    select: {
-                                        firstName: true,
-                                        lastName: true
-                                    }
-                                }
+                                firstName: true,
+                                lastName: true,
+                                email: true
                             }
                         }
                     }

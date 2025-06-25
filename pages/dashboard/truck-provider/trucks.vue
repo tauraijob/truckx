@@ -99,8 +99,9 @@
             <td class="px-6 py-4">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <div class="h-10 w-10 rounded-md bg-blue-100 flex items-center justify-center">
-                    <TruckIcon class="h-6 w-6 text-blue-600" />
+                  <div class="h-10 w-10 rounded-md bg-blue-100 flex items-center justify-center overflow-hidden">
+                    <img v-if="truck.images && truck.images.length > 0" :src="truck.images[0]" alt="Truck image" class="h-10 w-10 object-cover rounded-md" />
+                    <TruckIcon v-else class="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
                 <div class="ml-4">
@@ -593,6 +594,7 @@ interface Truck {
     id: string;
     title: string;
   };
+  images?: string[];
 }
 
 // Pagination and filters
@@ -883,7 +885,11 @@ async function saveTruck() {
       }, 5000)
       return;
     }
-    
+    // Build images array
+    const images = [
+      ...(featuredImage.value ? [featuredImage.value] : []),
+      ...(galleryImages.value || [])
+    ]
     if (showEditTruckModal.value && selectedTruck.value) {
       // Update existing truck
       isSaving.value = true;
@@ -906,27 +912,30 @@ async function saveTruck() {
             description: truckForm.value.description
           },
           featuredImage: featuredImage.value,
-          galleryImages: galleryImages.value || []
+          galleryImages: galleryImages.value || [],
+          images // for backend compatibility
         }
       });
-      
       // Update local state
       const index = trucks.value.findIndex(t => t.id === selectedTruck.value!.id)
-      if (index !== -1) {
+      if (index !== -1 && response.truck) {
         trucks.value[index] = {
           ...trucks.value[index],
-          make: truckForm.value.make,
-          model: truckForm.value.model,
-          year: truckForm.value.year,
-          capacityTons: truckForm.value.capacityTons,
-          registrationNumber: truckForm.value.registrationNumber,
-          type: truckForm.value.type,
-          currentLocation: truckForm.value.currentLocation,
-          availability: truckForm.value.availability,
-          description: truckForm.value.description
+          make: response.truck.make,
+          model: response.truck.model,
+          year: response.truck.year,
+          capacityTons: response.truck.capacity,
+          registrationNumber: response.truck.licensePlate,
+          type: response.truck.specifications?.type || 'FLATBED',
+          currentLocation: response.truck.specifications?.currentLocation || '',
+          availability: response.truck.specifications?.availability || 'AVAILABLE',
+          description: response.truck.specifications?.description || '',
+          images: Array.isArray(response.truck.images) ? response.truck.images : images,
+          activeOrderStatus: response.truck.activeOrderStatus,
+          hasActiveOrder: response.truck.hasActiveOrder,
+          activeLoadInfo: response.truck.activeLoadInfo
         }
       }
-      
       // Show success notification
       notification.value = {
         type: 'success',
@@ -940,8 +949,6 @@ async function saveTruck() {
     } else {
       // Create new truck
       isSaving.value = true;
-      
-      // Prepare the request body
       const requestBody = {
         make: truckForm.value.make,
         model: truckForm.value.model,
@@ -953,25 +960,11 @@ async function saveTruck() {
           currentLocation: truckForm.value.currentLocation,
           availability: truckForm.value.availability,
           description: truckForm.value.description
-        }
+        },
+        featuredImage: featuredImage.value,
+        galleryImages: galleryImages.value || [],
+        images // for backend compatibility
       };
-      
-      // Only add featuredImage if it exists
-      if (featuredImage.value) {
-        Object.assign(requestBody, { featuredImage: featuredImage.value });
-      }
-      
-      // Only add galleryImages if they exist
-      if (galleryImages.value && galleryImages.value.length > 0) {
-        Object.assign(requestBody, { galleryImages: galleryImages.value });
-      }
-      
-      console.log('Sending truck creation request with body:', JSON.stringify({
-        ...requestBody,
-        featuredImage: featuredImage.value ? 'Base64Image' : null,
-        galleryImages: galleryImages.value && galleryImages.value.length > 0 ? `${galleryImages.value.length} images` : null
-      }));
-      
       const response = await $fetch('/api/trucks', {
         method: 'POST',
         headers: {
@@ -979,9 +972,7 @@ async function saveTruck() {
         },
         body: requestBody
       });
-      
       if (response.exists) {
-        // Show a notification that the license plate already exists
         notification.value = {
           type: 'error',
           message: `${response.message} (${response.existingTruck.make} ${response.existingTruck.model}, ${response.existingTruck.year})`
@@ -993,9 +984,7 @@ async function saveTruck() {
         isSaving.value = false;
         return;
       }
-      
       if (response && response.truck) {
-        // Add to local state
         const newTruck: Truck = {
           id: response.truck.id,
           make: response.truck.make,
@@ -1007,13 +996,12 @@ async function saveTruck() {
           currentLocation: response.truck.specifications?.currentLocation || '',
           availability: response.truck.specifications?.availability || 'AVAILABLE',
           description: response.truck.specifications?.description || '',
+          images: Array.isArray(response.truck.images) ? response.truck.images : images,
           activeOrderStatus: response.truck.activeOrderStatus,
           hasActiveOrder: response.truck.hasActiveOrder,
           activeLoadInfo: response.truck.activeLoadInfo
         }
         trucks.value.push(newTruck)
-        
-        // Show success notification
         notification.value = {
           type: 'success',
           message: 'Truck added successfully'
@@ -1025,13 +1013,10 @@ async function saveTruck() {
       }
       isSaving.value = false;
     }
-    
     closeModal()
   } catch (error: any) {
     console.error('Error saving truck:', error)
     isSaving.value = false;
-    
-    // Show error notification
     notification.value = {
       type: 'error',
       message: error.message || 'Error saving truck'
