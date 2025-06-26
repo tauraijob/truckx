@@ -21,7 +21,11 @@ export default defineNuxtConfig({
     routeRules: {
       '/uploads/**': { ssr: true },
       // Ensure /uploads is always handled by the server
-    }
+    },
+    publicAssets: [
+      { dir: 'public', maxAge: 60 * 60 * 24 * 7 },
+      { dir: 'uploads', baseURL: '/uploads' }
+    ]
   },
   experimental: {
     payloadExtraction: false

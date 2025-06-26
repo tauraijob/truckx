@@ -156,6 +156,10 @@ watch(() => props.initialImages, (newImages) => {
 // Helper to fetch a URL and create a File object
 async function fetchAndCreateFile(url: string): Promise<File | null> {
   try {
+    // If the url starts with /uploads/, convert to /api/uploads/
+    if (url.startsWith('/uploads/')) {
+      url = url.replace('/uploads/', '/api/uploads/');
+    }
     const response = await fetch(url)
     const blob = await response.blob()
     const filename = url.split('/').pop() || 'image.jpg'

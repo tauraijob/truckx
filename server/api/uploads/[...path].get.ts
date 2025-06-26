@@ -4,6 +4,8 @@ import path from 'path'
 // @ts-ignore
 import { lookup } from 'mime-types'
 
+export const skipAuth = true;
+
 export default defineEventHandler(async (event) => {
   try {
     const filePath = getRouterParam(event, 'path')

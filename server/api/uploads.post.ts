@@ -11,27 +11,29 @@ export const config = {
 export const skipAuth = true;
 
 export default defineEventHandler(async (event) => {
-    const form = formidable({ multiples: false, uploadDir: path.join(process.cwd(), 'public', 'images'), keepExtensions: true })
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    const form = formidable({ multiples: false, uploadDir, keepExtensions: true });
+
     const [fields, files] = await new Promise((resolve, reject) => {
         form.parse(event.node.req, (err, fields, files) => {
             if (err) reject(err)
             else resolve([fields, files])
         })
-    })
+    });
 
-    const fileField = files.file
-    let file
-    if (Array.isArray(fileField)) {
-        file = fileField[0]
-    } else {
-        file = fileField
-    }
+    let file = Array.isArray(files.file) ? files.file[0] : files.file;
     if (!file || !file.filepath) {
-        console.error('Upload error: files object:', files)
-        throw createError({ statusCode: 400, message: 'No file uploaded' })
+        throw createError({ statusCode: 400, message: 'No file uploaded' });
     }
 
-    // Move file to /uploads and return the URL
-    const filename = path.basename(file.filepath)
-    return { url: `/images/${filename}` }
-}) 
+    // Get the original extension
+    const ext = path.extname(file.originalFilename || file.newFilename || file.filepath);
+    // Generate a new filename with the correct extension
+    const newFilename = `${path.basename(file.filepath, path.extname(file.filepath))}${ext}`;
+    const newFilePath = path.join(uploadDir, newFilename);
+
+    // Move/rename the file to the new filename (overwrite if exists)
+    fs.renameSync(file.filepath, newFilePath);
+
+    return { url: `/api/uploads/${newFilename}` };
+}); 

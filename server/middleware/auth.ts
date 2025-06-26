@@ -59,7 +59,8 @@ export default defineEventHandler(async (event) => {
 
     // Check if the path starts with any of these prefixes
     const publicPrefixes = [
-        '/api/public/'
+        '/api/public/',
+        '/api/uploads/'
     ]
 
     if (publicPrefixes.some(prefix => event.path.startsWith(prefix))) {

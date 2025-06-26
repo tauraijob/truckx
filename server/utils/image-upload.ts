@@ -4,13 +4,13 @@ import path from 'path'
 import fs from 'fs'
 import { nanoid } from 'nanoid'
 
-// Configure storage to use /public/images (not uploads)
+// Configure storage to use /uploads
 const storage = createStorage({
-    driver: fsDriver({ base: './public/images' })
+    driver: fsDriver({ base: './uploads' })
 })
 
-// Ensure the upload directory exists (in /public/images)
-const uploadDir = path.join(process.cwd(), 'public', 'images')
+// Ensure the upload directory exists (in /uploads)
+const uploadDir = path.join(process.cwd(), 'uploads')
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true })
 }
@@ -39,8 +39,9 @@ export async function processImages(images: string[]): Promise<string[]> {
             if (!image) return null
 
             // If image is already a URL (e.g., from a previous upload), use it as is
-            if (image.startsWith('http') || image.startsWith('/uploads') || image.startsWith('/images')) {
-                return image
+            if (image.startsWith('http') || image.startsWith('/uploads') || image.startsWith('/api/uploads')) {
+                // Normalize to /api/uploads, but avoid double /api/api/uploads
+                return image.replace(/^(\/uploads|\/api\/uploads)/, '/api/uploads')
             }
 
             // If it's a base64 image, save it to the filesystem
@@ -84,7 +85,7 @@ async function saveBase64Image(base64String: string): Promise<string> {
 
         // Generate a unique filename
         const filename = `${nanoid()}.${format}`
-        const filePath = `/images/${filename}`
+        const filePath = `/api/uploads/${filename}`
         const fullPath = path.join(uploadDir, filename)
 
         // Write the file to disk asynchronously

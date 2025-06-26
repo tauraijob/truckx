@@ -348,7 +348,7 @@ async function handleAvatarChange(event: Event) {
       })
       if (!response.ok) throw new Error('Failed to upload image')
       const data = await response.json()
-      profile.value.avatarUrl = data.url // /uploads/filename.ext
+      profile.value.avatarUrl = data.url // /api/uploads/filename.ext
     } catch (e) {
       alert('Failed to upload profile image.')
     }
