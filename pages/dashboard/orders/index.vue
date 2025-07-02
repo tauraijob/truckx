@@ -214,7 +214,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useOrder } from '~/composables/useOrder'
 import { useAuthStore } from '~/stores/auth'
-
+import { OrderStatus } from '~/types/index'
 
 const authStore = useAuthStore()
 const { orders, loading, error, fetchOrders, updateOrderStatus, cancelOrder, completeOrder } = useOrder()

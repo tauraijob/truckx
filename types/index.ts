@@ -69,6 +69,8 @@ export interface Order {
     truckId: string
     truckProviderId: string
     loadProviderId: string
+    load?: Load
+    truck?: Truck
 }
 
 // Load interface

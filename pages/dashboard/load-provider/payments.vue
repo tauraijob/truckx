@@ -396,113 +396,49 @@ const totalPlatformFeeAmount = computed(() => {
 const fetchPaymentData = async () => {
     isLoading.value = true
     const toast = useToast()
-    
     try {
-        // Get token from localStorage
         const token = localStorage.getItem('token')
-        console.log('Fetching payment data with token:', token ? 'Available' : 'Not available')
-        
-        // For testing, use hardcoded mock data
-        const mockData = {
-            currentBalance: 5000.50,
-            totalPaid: 10000.75,
-            pendingAmount: 2500.25,
-            platformFees: 250.15,
-            providerPayments: 9750.60,
-            thisMonthTotal: 3500.80,
-            transactions: [
-                {
-                    id: 'tx1',
-                    orderId: 'order1',
-                    description: 'Payment for Load #1',
-                    amount: 1200.00,
-                    status: 'COMPLETED',
-                    createdAt: new Date().toISOString(),
-                    orderDetails: {
-                        loadName: 'Furniture Delivery',
-                        truckName: 'Truck A',
-                        providerName: 'Provider X'
-                    }
-                },
-                {
-                    id: 'tx2',
-                    orderId: 'order2',
-                    description: 'Payment for Load #2',
-                    amount: 950.50,
-                    status: 'PENDING',
-                    createdAt: new Date(Date.now() - 86400000).toISOString(),
-                    orderDetails: {
-                        loadName: 'Electronics Delivery',
-                        truckName: 'Truck B',
-                        providerName: 'Provider Y'
-                    }
-                }
-            ],
-            pendingOrders: [
-                {
-                    id: 'po1',
-                    loadTitle: 'Furniture Load',
-                    truckInfo: 'Truck A - ABC123',
-                    amount: 1500.00
-                },
-                {
-                    id: 'po2',
-                    loadTitle: 'Food Delivery',
-                    truckInfo: 'Truck C - XYZ789',
-                    amount: 1000.25
-                }
-            ]
-        };
-        
-        console.log('Using mock payment data:', mockData);
-        
+        const { data, error } = await useFetch('/api/load-provider/payments', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        if (error.value) throw error.value
+        const apiData = data.value
         // Set financial data
         financeData.value = {
-            currentBalance: mockData.currentBalance || 0,
-            totalPaid: mockData.totalPaid || 0,
-            pendingAmount: mockData.pendingAmount || 0,
-            platformFees: mockData.platformFees || 0,
-            providerPayments: mockData.providerPayments || 0,
-            thisMonthTotal: mockData.thisMonthTotal || 0
+            currentBalance: 0, // Not provided by API
+            totalPaid: apiData?.summary?.totalSpent || 0,
+            pendingAmount: 0, // Not provided by API
+            platformFees: apiData?.summary?.platformFees || 0,
+            providerPayments: apiData?.summary?.providerPayments || 0,
+            thisMonthTotal: 0 // Not provided by API
         }
-        
         // Process transactions
-        if (mockData.transactions && Array.isArray(mockData.transactions)) {
-            transactions.value = mockData.transactions
+        if (apiData?.payments && Array.isArray(apiData.payments)) {
+            transactions.value = apiData.payments.map((p: any) => ({
+                id: p.id,
+                orderId: p.order?.id || '',
+                description: p.description || (p.type === 'PLATFORM_FEE' ? 'Platform Fee' : 'Provider Payment'),
+                amount: p.amount,
+                status: p.type === 'PLATFORM_FEE' ? 'FEE' : 'COMPLETED',
+                createdAt: p.createdAt,
+                type: p.type,
+                orderDetails: {
+                    loadName: p.order?.load?.title || '',
+                    truckName: p.order?.truck?.name || '',
+                    providerName: ''
+                }
+            }))
         } else {
             transactions.value = []
         }
-        
-        // Include accepted orders
-        if (mockData.pendingOrders && Array.isArray(mockData.pendingOrders)) {
-            pendingPayments.value = mockData.pendingOrders
-            
-            // If no transactions exist for accepted orders, create payment entries for them
-            if (transactions.value.length === 0 && pendingPayments.value.length > 0) {
-                transactions.value = pendingPayments.value.map(order => ({
-                    id: order.id,
-                    orderId: order.id,
-                    description: `Payment for ${order.loadTitle}`,
-                    amount: order.amount,
-                    status: 'PENDING',
-                    createdAt: new Date().toISOString(),
-                    orderDetails: {
-                        loadName: order.loadTitle,
-                        truckName: order.truckInfo,
-                        providerName: ''
-                    }
-                }))
-            }
-        } else {
-            pendingPayments.value = []
-        }
-        
+        // No direct pendingPayments in this API, so clear it
+        pendingPayments.value = []
         toast.success('Payment data loaded successfully')
     } catch (error) {
         console.error('Error fetching payment data:', error)
         toast.error('Failed to load payment data')
-        
-        // Fallback to empty data on error
         financeData.value = {
             currentBalance: 0,
             totalPaid: 0,
@@ -511,7 +447,6 @@ const fetchPaymentData = async () => {
             providerPayments: 0,
             thisMonthTotal: 0
         }
-        
         transactions.value = []
         pendingPayments.value = []
     } finally {

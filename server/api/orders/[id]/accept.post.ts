@@ -1,5 +1,6 @@
 import { prisma } from '#imports'
 import { OrderStatus } from '~/server/utils/enums'
+import { sendOrderUpdatedEmail } from '../../../utils/email'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -96,6 +97,14 @@ export default defineEventHandler(async (event) => {
             where: { id: order.loadId },
             data: { isAvailable: false }
         })
+
+        // Send acceptance email to both load provider and truck provider
+        if (updatedOrder.truckProvider?.email) {
+            await sendOrderUpdatedEmail(updatedOrder.truckProvider.email, updatedOrder, 'ACCEPTED')
+        }
+        if (updatedOrder.loadProvider?.email) {
+            await sendOrderUpdatedEmail(updatedOrder.loadProvider.email, updatedOrder, 'ACCEPTED')
+        }
 
         return {
             order: updatedOrder,

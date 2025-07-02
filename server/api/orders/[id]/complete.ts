@@ -1,5 +1,6 @@
 import { prisma } from '#imports'
 import { OrderStatus } from '~/server/utils/enums'
+import { sendOrderCompletedEmail } from '../../../utils/email'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -88,6 +89,14 @@ export default defineEventHandler(async (event) => {
                 }
             }
         })
+
+        // Send email notifications
+        if (updatedOrder.truckProvider?.email) {
+          await sendOrderCompletedEmail(updatedOrder.truckProvider.email, updatedOrder)
+        }
+        if (updatedOrder.loadProvider?.email) {
+          await sendOrderCompletedEmail(updatedOrder.loadProvider.email, updatedOrder)
+        }
 
         // Make the truck available again
         await prisma.truck.update({

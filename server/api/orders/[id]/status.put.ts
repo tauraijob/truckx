@@ -1,5 +1,6 @@
 import { prisma } from '#imports'
 import { OrderStatus } from '~/server/utils/enums'
+import { sendOrderUpdatedEmail } from '../../../utils/email'
 
 // Define allowed status transitions based on user role and current status
 const allowedTransitions = {
@@ -145,6 +146,14 @@ export default defineEventHandler(async (event) => {
                 }
             }
         })
+
+        // Send email notifications
+        if (updatedOrder.truckProvider?.email) {
+          await sendOrderUpdatedEmail(updatedOrder.truckProvider.email, updatedOrder, status)
+        }
+        if (updatedOrder.loadProvider?.email) {
+          await sendOrderUpdatedEmail(updatedOrder.loadProvider.email, updatedOrder, status)
+        }
 
         // Handle truck and load availability based on status
         if (status === OrderStatus.ACCEPTED) {

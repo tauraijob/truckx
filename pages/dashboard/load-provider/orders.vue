@@ -39,6 +39,7 @@
           <option value="IN_TRANSIT">In Transit</option>
           <option value="DELIVERED">Delivered</option>
           <option value="CANCELLED">Cancelled</option>
+          <option value="REJECTED">Rejected</option>
         </select>
       </div>
       <div>
@@ -115,6 +116,7 @@
                   @click="openAcceptModal(order)"
                   class="rounded bg-white p-1 text-gray-400 hover:text-green-600"
                   title="Accept Order"
+                  :disabled="order.status !== 'PENDING' || actionLoading === order.id"
                 >
                   <CheckIcon class="h-5 w-5" />
                 </button>
@@ -123,6 +125,7 @@
                   @click="openCancelModal(order)"
                   class="rounded bg-white p-1 text-gray-400 hover:text-red-600"
                   title="Cancel Order"
+                  :disabled="order.status !== 'PENDING' || actionLoading === order.id"
                 >
                   <XMarkIcon class="h-5 w-5" />
                 </button>
@@ -504,6 +507,7 @@ const cancellationReason = ref('')
 const paymentAmount = ref(0)
 const paymentMethod = ref('')
 const paymentNotes = ref('')
+const actionLoading = ref<string | null>(null)
 
 // Filter and sort orders
 const filteredOrders = computed(() => {
@@ -612,38 +616,40 @@ function formatDate(dateString: string): string {
 }
 
 // Format status
-function formatStatus(status: OrderStatus): string {
+function formatStatus(status: string): string {
   switch (status) {
-    case OrderStatus.PENDING:
+    case 'PENDING':
       return 'Pending'
-    case OrderStatus.ACCEPTED:
+    case 'ACCEPTED':
       return 'Accepted'
-    case OrderStatus.IN_TRANSIT:
+    case 'IN_TRANSIT':
       return 'In Transit'
-    case OrderStatus.DELIVERED:
+    case 'DELIVERED':
       return 'Delivered'
-    case OrderStatus.COMPLETED:
+    case 'COMPLETED':
       return 'Completed'
-    case OrderStatus.CANCELLED:
+    case 'CANCELLED':
       return 'Cancelled'
+    case 'REJECTED':
+      return 'Rejected'
     default:
       return status
   }
 }
 
 // Get status badge class
-function getStatusClass(status: OrderStatus): string {
+function getStatusClass(status: string): string {
   switch (status) {
-    case OrderStatus.PENDING:
+    case 'PENDING':
       return 'bg-yellow-100 text-yellow-800'
-    case OrderStatus.ACCEPTED:
+    case 'ACCEPTED':
       return 'bg-blue-100 text-blue-800'
-    case OrderStatus.IN_TRANSIT:
+    case 'IN_TRANSIT':
       return 'bg-purple-100 text-purple-800'
-    case OrderStatus.DELIVERED:
-    case OrderStatus.COMPLETED:
+    case 'DELIVERED':
+    case 'COMPLETED':
       return 'bg-green-100 text-green-800'
-    case OrderStatus.CANCELLED:
+    case 'CANCELLED':
       return 'bg-red-100 text-red-800'
     default:
       return 'bg-gray-100 text-gray-800'
@@ -657,12 +663,22 @@ function openOrderDetails(order: OrderWithDetails) {
 }
 
 function openCancelModal(order: OrderWithDetails) {
+  if (order.status !== 'PENDING') {
+    alert('This order is no longer pending. The list will be refreshed.');
+    fetchOrders();
+    return;
+  }
   selectedOrder.value = order
   cancellationReason.value = ''
   showCancelModal.value = true
 }
 
 function openAcceptModal(order: OrderWithDetails) {
+  if (order.status !== 'PENDING') {
+    alert('This order is no longer pending. The list will be refreshed.');
+    fetchOrders();
+    return;
+  }
   selectedOrder.value = order
   showAcceptModal.value = true
 }
@@ -678,7 +694,7 @@ function openPaymentModal(order: OrderWithDetails) {
 // Cancel order
 async function cancelOrder() {
   if (!selectedOrder.value) return
-  
+  actionLoading.value = selectedOrder.value.id
   try {
     // Call the API to cancel the order
     const { data, error: cancelError } = await useFetch(`/api/orders/${selectedOrder.value.id}/cancel`, {
@@ -690,34 +706,42 @@ async function cancelOrder() {
         reason: cancellationReason.value
       }
     })
-    
     if (cancelError.value) {
+      // Soft success for already-cancelled orders
+      if (cancelError.value.message && cancelError.value.message.includes('Cannot cancel order in CANCELLED status')) {
+        fetchOrders();
+        showCancelModal.value = false
+        selectedOrder.value = null
+        cancellationReason.value = ''
+        actionLoading.value = null
+        return
+      }
       console.error('Error cancelling order:', cancelError.value);
       throw new Error(cancelError.value.message || 'Failed to cancel order')
     }
-    
     // Find and update the order in our local data
     const index = orders.value.findIndex(o => o.id === selectedOrder.value!.id)
     if (index !== -1) {
       orders.value[index].status = 'CANCELLED'
     }
-    
     showCancelModal.value = false
     selectedOrder.value = null
     cancellationReason.value = ''
-    
     // Show success message
     alert('Order cancelled successfully')
+    fetchOrders();
   } catch (error) {
     console.error('Error cancelling order:', error)
     alert(`Error cancelling order: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  } finally {
+    actionLoading.value = null
   }
 }
 
 // Accept order
 async function acceptOrder() {
   if (!selectedOrder.value) return
-  
+  actionLoading.value = selectedOrder.value.id
   try {
     // Call the API to accept the order
     const { data, error: acceptError } = await useFetch(`/api/orders/${selectedOrder.value.id}/status`, {
@@ -730,26 +754,33 @@ async function acceptOrder() {
         notes: 'Order accepted by load provider'
       }
     })
-    
     if (acceptError.value) {
+      // Soft success for already-accepted orders
+      if (acceptError.value.message && acceptError.value.message.includes('Cannot change order status from ACCEPTED to ACCEPTED')) {
+        fetchOrders();
+        showAcceptModal.value = false
+        selectedOrder.value = null
+        actionLoading.value = null
+        return
+      }
       console.error('Error accepting order:', acceptError.value);
       throw new Error(acceptError.value.message || 'Failed to accept order')
     }
-    
     // Find and update the order in our local data
     const index = orders.value.findIndex(o => o.id === selectedOrder.value!.id)
     if (index !== -1) {
       orders.value[index].status = 'ACCEPTED'
     }
-    
     showAcceptModal.value = false
     selectedOrder.value = null
-    
     // Show success message
     alert('Order accepted successfully')
+    fetchOrders();
   } catch (error) {
     console.error('Error accepting order:', error)
     alert(`Error accepting order: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  } finally {
+    actionLoading.value = null
   }
 }
 
@@ -800,15 +831,16 @@ async function recordPayment() {
 async function fetchOrders() {
   loading.value = true
   try {
-    console.log('Fetching orders for load provider...');
-    
-    // Fetch real data from API
+    // Only send status if user has selected a filter
+    const queryObj: any = {
+      page: 1,
+      limit: 50
+    }
+    if (filterStatus.value) {
+      queryObj.status = filterStatus.value
+    }
     const { data, error: fetchError } = await useFetch('/api/orders', {
-      query: {
-        status: filterStatus.value || undefined,
-        page: 1,
-        limit: 50 // Get more at once for client-side filtering/sorting
-      },
+      query: queryObj,
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       }

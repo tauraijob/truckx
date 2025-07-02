@@ -7,8 +7,8 @@ const handler = defineEventHandler(async (event) => {
         const userId = event.context.auth?.userId
         const userRole = event.context.auth?.role
 
-        // Verify user is an admin
-        if (!userId || userRole !== 'ADMIN') {
+        // Verify user is an admin or super admin
+        if (!userId || (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN')) {
             throw createError({
                 statusCode: 403,
                 message: 'Only administrators can perform this action'
